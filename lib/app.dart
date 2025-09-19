@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screen/main/s_timer.dart';
+import 'screen/main/s_main.dart';
 import 'common/constant/app_constants.dart';
 
 class TimeDogApp extends StatelessWidget {
@@ -19,7 +19,7 @@ class TimeDogApp extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
         ),
       ),
-      home: const TimerScreen(),
+      home: const MainScreen(),
     );
   }
 }

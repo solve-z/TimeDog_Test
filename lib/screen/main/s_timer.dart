@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../common/widget/w_app_bar_actions.dart';
+import '../../common/widget/w_bottom_navigation.dart';
+import 'f_character_animation.dart';
 
 class TimerScreen extends StatefulWidget {
   const TimerScreen({super.key});
@@ -20,6 +22,7 @@ class _TimerScreenState extends State<TimerScreen> {
       ),
       body: Column(
         children: [
+          // 할일
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -30,6 +33,8 @@ class _TimerScreenState extends State<TimerScreen> {
             ),
           ),
           const Spacer(),
+
+          // 타이머&스톱워치
           Column(
             children: [
               const Text(
@@ -44,16 +49,12 @@ class _TimerScreenState extends State<TimerScreen> {
             ],
           ),
           const Spacer(),
-          Container(
-            height: 150,
-            width: 150,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(75),
-            ),
-            child: const Icon(Icons.pets, size: 80, color: Colors.grey),
-          ),
+
+          // 캐릭터 애니메이션 영역
+          const CharacterAnimationFragment(),
           const Spacer(),
+
+          // 액션버튼
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -86,22 +87,13 @@ class _TimerScreenState extends State<TimerScreen> {
           const SizedBox(height: 32),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
+      bottomNavigationBar: BottomNavigationWidget(
         currentIndex: _currentIndex,
-        selectedItemColor: Colors.red,
-        unselectedItemColor: Colors.grey,
         onTap: (index) {
           setState(() {
             _currentIndex = index;
           });
         },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.timer), label: '타이머'),
-          BottomNavigationBarItem(icon: Icon(Icons.check_box), label: '할일'),
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: '통계'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: '내정보'),
-        ],
       ),
     );
   }

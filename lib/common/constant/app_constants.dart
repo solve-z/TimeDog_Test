@@ -21,7 +21,8 @@ class AssetPaths {
 }
 
 class AppColors {
-  static const Color selectedBottomNav = Color(0xFFF67575);
+  static const Color primary = Color(0xFFF67575);
+  static const Color selectedBottomNav = primary; // 하위 호환성을 위해 유지
   static const Color scaffoldBackground = Color(0xFFFFFFFF);
   static const Color bottomNavBackground = Color(0xFFFFFFFF);
   static const Color appBarBackground = Color(0xFFFFFFFF);

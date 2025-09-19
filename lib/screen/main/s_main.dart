@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../common/widget/w_app_bar_actions.dart';
 import '../../common/widget/w_bottom_navigation.dart';
 import 'tab/timer/s_timer.dart';
-import 'tab/todo/s_todo_management.dart';
+import 'tab/todo/s_todo.dart';
 import 'tab/statistics/s_statistics.dart';
 import 'tab/profile/s_profile.dart';
 
@@ -20,7 +20,7 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _screens = [
     const TimerScreen(),
-    const TodoManagementScreen(),
+    const TodoScreen(),
     const StatisticsScreen(),
     const ProfileScreen(),
   ];

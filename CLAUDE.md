@@ -100,7 +100,14 @@ Currently a basic Flutter starter project with:
   - `dto_user.dart` → `UserDto`
   - `dto_transaction.dart` → `TransactionDto`
 
-### 7. **기타 (나머지)**
+### 7. **Dummy Data**
+- 파일명: `{name}_dummy.dart`
+- 내용: 테스트/개발용 더미 데이터
+- 예시:
+  - `todo_items_dummy.dart` → 할일 목록 더미 데이터
+  - `user_data_dummy.dart` → 사용자 더미 데이터
+
+### 8. **기타 (나머지)**
 - 파일명: 소문자, 숫자, `_` 조합 (공식 가이드 준수)
 - 클래스명: PascalCase
 - 예시:

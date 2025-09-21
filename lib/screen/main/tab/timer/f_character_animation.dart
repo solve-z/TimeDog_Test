@@ -10,7 +10,7 @@ class CharacterAnimationFragment extends StatefulWidget {
 
 class _CharacterAnimationFragmentState
     extends State<CharacterAnimationFragment> {
-  String currentAnimation = 'assets/images/animations/animation1.png';
+  String currentAnimation = 'assets/images/animations/animation2.png';
 
   @override
   Widget build(BuildContext context) {
@@ -19,17 +19,10 @@ class _CharacterAnimationFragmentState
         // 추후 애니메이션 변경 기능
       },
       child: Container(
-        height: 150,
-        width: 150,
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(75)),
+        height: 250,
+        width: 250,
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(75),
-          child: Image.asset(
-            currentAnimation,
-            width: 150,
-            height: 150,
-            fit: BoxFit.cover,
-          ),
+          child: Image.asset(currentAnimation, fit: BoxFit.cover),
         ),
       ),
     );

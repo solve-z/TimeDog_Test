@@ -28,7 +28,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: _currentIndex == 0 ? null : AppBar(
         title: Text(
           _tabTitles[_currentIndex],
           style: const TextStyle(fontWeight: FontWeight.bold),

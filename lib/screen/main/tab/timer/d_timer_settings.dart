@@ -1,0 +1,218 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'timer_notifier.dart';
+import 'vo/vo_timer.dart';
+
+class TimerSettingsDialog extends ConsumerStatefulWidget {
+  const TimerSettingsDialog({super.key});
+
+  @override
+  ConsumerState<TimerSettingsDialog> createState() => _TimerSettingsDialogState();
+}
+
+class _TimerSettingsDialogState extends ConsumerState<TimerSettingsDialog> {
+  late int totalRounds;
+  late int focusMinutes;
+  late int shortBreakMinutes;
+  late int longBreakMinutes;
+
+  @override
+  void initState() {
+    super.initState();
+    final settings = ref.read(timerProvider).settings;
+    totalRounds = settings.totalRounds;
+    focusMinutes = settings.focusTime.inMinutes;
+    shortBreakMinutes = settings.shortBreakTime.inMinutes;
+    longBreakMinutes = settings.longBreakTime.inMinutes;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+          maxWidth: MediaQuery.of(context).size.width * 0.9,
+        ),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  '타이머 설정',
+                  style: TextStyle(
+                    fontFamily: 'OmyuPretty',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+                const SizedBox(height: 30),
+
+                _buildSettingItem('총 라운드 수', totalRounds, 1, 10, (value) {
+                  setState(() => totalRounds = value);
+                }),
+                const SizedBox(height: 20),
+
+                _buildSettingItem('집중 시간', focusMinutes, 5, 60, (value) {
+                  setState(() => focusMinutes = value);
+                }, unit: '분'),
+                const SizedBox(height: 20),
+
+                _buildSettingItem('짧은 휴식', shortBreakMinutes, 1, 30, (value) {
+                  setState(() => shortBreakMinutes = value);
+                }, unit: '분'),
+                const SizedBox(height: 20),
+
+                _buildSettingItem('긴 휴식', longBreakMinutes, 5, 60, (value) {
+                  setState(() => longBreakMinutes = value);
+                }, unit: '분'),
+                const SizedBox(height: 40),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildActionButton('취소', () => Navigator.of(context).pop()),
+                    _buildActionButton('저장', _saveSettings, isPrimary: true),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSettingItem(
+    String label,
+    int value,
+    int min,
+    int max,
+    ValueChanged<int> onChanged, {
+    String unit = '',
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontFamily: 'OmyuPretty',
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF6B7280),
+              ),
+            ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GestureDetector(
+                onTap: value > min ? () => onChanged(value - 1) : null,
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: value > min ? const Color(0xFFE5E7EB) : const Color(0xFFF3F4F6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.remove,
+                    size: 16,
+                    color: value > min ? const Color(0xFF6B7280) : const Color(0xFFD1D5DB),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                width: 50,
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                ),
+                child: Text(
+                  '$value$unit',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontFamily: 'OmyuPretty',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              GestureDetector(
+                onTap: value < max ? () => onChanged(value + 1) : null,
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: value < max ? const Color(0xFFE5E7EB) : const Color(0xFFF3F4F6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.add,
+                    size: 16,
+                    color: value < max ? const Color(0xFF6B7280) : const Color(0xFFD1D5DB),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton(String text, VoidCallback onPressed, {bool isPrimary = false}) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+        decoration: BoxDecoration(
+          color: isPrimary ? const Color(0xFFD9B5FF) : const Color(0xFFE5E7EB),
+          borderRadius: BorderRadius.circular(25),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            fontFamily: 'OmyuPretty',
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: isPrimary ? Colors.white : const Color(0xFF6B7280),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _saveSettings() {
+    final newSettings = TimerSettings(
+      totalRounds: totalRounds,
+      focusTime: Duration(minutes: focusMinutes),
+      shortBreakTime: Duration(minutes: shortBreakMinutes),
+      longBreakTime: Duration(minutes: longBreakMinutes),
+    );
+
+    ref.read(timerProvider.notifier).updateSettings(newSettings);
+    Navigator.of(context).pop();
+  }
+}

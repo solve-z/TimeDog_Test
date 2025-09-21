@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'f_character_animation.dart';
 import 'timer_notifier.dart';
 import 'vo/vo_timer.dart';
+import 'd_timer_settings.dart';
 
 class TimerScreen extends ConsumerWidget {
   const TimerScreen({super.key});
@@ -14,14 +15,14 @@ class TimerScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
+        child: Column(
+          children: [
+            const SizedBox(height: 30),
 
-              // 모드 및 할일 영역
-              Row(
+            // 모드 및 할일 영역
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   GestureDetector(
@@ -73,19 +74,55 @@ class TimerScreen extends ConsumerWidget {
                   const SizedBox(width: 50),
                 ],
               ),
-              const SizedBox(height: 20),
+            ),
+            const SizedBox(height: 20),
 
-              // 타이머 표시
-              Text(
-                timerState.formattedTime,
-                style: const TextStyle(
-                  fontFamily: 'OmyuPretty',
-                  fontSize: 64,
-                  fontWeight: FontWeight.w300,
-                  color: Color(0xFF6B7280),
-                  letterSpacing: 4,
+            // 타이머 표시
+            Stack(
+              children: [
+                Center(
+                  child: Text(
+                    timerState.formattedTime,
+                    style: const TextStyle(
+                      fontFamily: 'OmyuPretty',
+                      fontSize: 64,
+                      fontWeight: FontWeight.w300,
+                      color: Color(0xFF6B7280),
+                      letterSpacing: 4,
+                    ),
+                  ),
                 ),
-              ),
+                if (timerState.mode == TimerMode.pomodoro)
+                  Positioned(
+                    right: 20,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(
+                      child: GestureDetector(
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) => const TimerSettingsDialog(),
+                          );
+                        },
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE5E7EB),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.settings,
+                            size: 24,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
               const SizedBox(height: 20),
 
               // 라운드 진행 상태 (뽀모도로 모드에서만)
@@ -109,56 +146,61 @@ class TimerScreen extends ConsumerWidget {
               const SizedBox(height: 15),
 
               // 노래 선택 버튼
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 15,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF9E9E9E),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SvgPicture.asset(
-                      'assets/images/icons/music.svg',
-                      width: 16,
-                      height: 16,
-                      colorFilter: const ColorFilter.mode(
-                        Colors.white,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(5),
-                      ),
-                      child: const Text(
-                        '노래 선택',
-                        style: TextStyle(
-                          fontFamily: 'OmyuPretty',
-                          fontSize: 14,
-                          color: Color(0xFF666666),
-                          fontWeight: FontWeight.w500,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 15,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF9E9E9E),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SvgPicture.asset(
+                        'assets/images/icons/music.svg',
+                        width: 16,
+                        height: 16,
+                        colorFilter: const ColorFilter.mode(
+                          Colors.white,
+                          BlendMode.srcIn,
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: const Text(
+                          '노래 선택',
+                          style: TextStyle(
+                            fontFamily: 'OmyuPretty',
+                            fontSize: 14,
+                            color: Color(0xFF666666),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ), 
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 15),
 
               // 컨트롤 버튼들
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
                   _buildControlButton(
                     timerState.status == TimerStatus.running
                         ? 'assets/images/icons/pause.svg'
@@ -187,9 +229,9 @@ class TimerScreen extends ConsumerWidget {
                     '리셋',
                   ),
                 ],
+                ),
               ),
-            ],
-          ),
+          ],
         ),
       ),
     );

@@ -36,6 +36,18 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_svg: ^2.0.10+1
 
+  # State Management
+  flutter_riverpod: ^2.4.9
+
+  # Local Storage
+  shared_preferences: ^2.2.2
+
+  # Notifications
+  flutter_local_notifications: ^19.4.0
+
+  # Background Execution
+  flutter_background: ^1.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

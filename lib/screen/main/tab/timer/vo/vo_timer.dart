@@ -57,6 +57,9 @@ class TimerState {
   final int currentRound;
   final PomodoroRound round;
   final TimerSettings settings;
+  final DateTime? startTime;
+  final DateTime? endTime;
+  final int completedRounds;
 
   const TimerState({
     this.mode = TimerMode.pomodoro,
@@ -65,6 +68,9 @@ class TimerState {
     this.currentRound = 1,
     this.round = PomodoroRound.focus,
     this.settings = const TimerSettings(),
+    this.startTime,
+    this.endTime,
+    this.completedRounds = 0,
   });
 
   TimerState copyWith({
@@ -74,6 +80,9 @@ class TimerState {
     int? currentRound,
     PomodoroRound? round,
     TimerSettings? settings,
+    DateTime? startTime,
+    DateTime? endTime,
+    int? completedRounds,
   }) {
     return TimerState(
       mode: mode ?? this.mode,
@@ -82,6 +91,9 @@ class TimerState {
       currentRound: currentRound ?? this.currentRound,
       round: round ?? this.round,
       settings: settings ?? this.settings,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
+      completedRounds: completedRounds ?? this.completedRounds,
     );
   }
 
@@ -107,6 +119,6 @@ class TimerState {
   }
 
   List<bool> get roundProgress {
-    return List.generate(settings.totalRounds, (index) => index < currentRound);
+    return List.generate(settings.totalRounds, (index) => index < completedRounds);
   }
 }

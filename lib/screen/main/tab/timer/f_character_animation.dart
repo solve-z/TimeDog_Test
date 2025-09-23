@@ -19,8 +19,8 @@ class _CharacterAnimationFragmentState
         // 추후 애니메이션 변경 기능
       },
       child: Container(
-        height: 250,
-        width: 250,
+        height: 200,
+        width: 200,
         child: ClipRRect(
           child: Image.asset(currentAnimation, fit: BoxFit.cover),
         ),

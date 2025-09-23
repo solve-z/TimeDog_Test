@@ -73,7 +73,19 @@ class _TimerSettingsDialogState extends ConsumerState<TimerSettingsDialog> {
                 _buildSettingItem('긴 휴식', longBreakMinutes, 5, 60, (value) {
                   setState(() => longBreakMinutes = value);
                 }, unit: '분'),
-                const SizedBox(height: 40),
+                const SizedBox(height: 20),
+
+                // 테스트용 5초 설정 버튼
+                Container(
+                  width: double.infinity,
+                  child: _buildActionButton(
+                    '테스트용 5초 설정',
+                    _setTestMode,
+                    isPrimary: false,
+                    isTest: true,
+                  ),
+                ),
+                const SizedBox(height: 20),
 
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -182,14 +194,19 @@ class _TimerSettingsDialogState extends ConsumerState<TimerSettingsDialog> {
     );
   }
 
-  Widget _buildActionButton(String text, VoidCallback onPressed, {bool isPrimary = false}) {
+  Widget _buildActionButton(String text, VoidCallback onPressed, {bool isPrimary = false, bool isTest = false}) {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
         decoration: BoxDecoration(
-          color: isPrimary ? const Color(0xFFD9B5FF) : const Color(0xFFE5E7EB),
+          color: isTest
+              ? const Color(0xFFFEF3C7)
+              : isPrimary
+                  ? const Color(0xFFD9B5FF)
+                  : const Color(0xFFE5E7EB),
           borderRadius: BorderRadius.circular(25),
+          border: isTest ? Border.all(color: const Color(0xFFF59E0B), width: 1) : null,
         ),
         child: Text(
           text,
@@ -197,11 +214,48 @@ class _TimerSettingsDialogState extends ConsumerState<TimerSettingsDialog> {
             fontFamily: 'OmyuPretty',
             fontSize: 16,
             fontWeight: FontWeight.w500,
-            color: isPrimary ? Colors.white : const Color(0xFF6B7280),
+            color: isTest
+                ? const Color(0xFFF59E0B)
+                : isPrimary
+                    ? Colors.white
+                    : const Color(0xFF6B7280),
           ),
         ),
       ),
     );
+  }
+
+  void _setTestMode() {
+    setState(() {
+      totalRounds = 2;
+      focusMinutes = 0; // 5초는 분으로 표현할 수 없으므로 0으로 설정
+      shortBreakMinutes = 0;
+      longBreakMinutes = 0;
+    });
+
+    // 5초 설정으로 바로 저장
+    final newSettings = TimerSettings(
+      totalRounds: 2,
+      focusTime: const Duration(seconds: 5),
+      shortBreakTime: const Duration(seconds: 5),
+      longBreakTime: const Duration(seconds: 5),
+    );
+
+    ref.read(timerProvider.notifier).updateSettings(newSettings);
+
+    // 설정 완료 스낵바 표시
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          '테스트용 5초 타이머로 설정되었습니다!',
+          style: TextStyle(fontFamily: 'OmyuPretty'),
+        ),
+        duration: Duration(seconds: 2),
+        backgroundColor: Color(0xFFF59E0B),
+      ),
+    );
+
+    Navigator.of(context).pop();
   }
 
   void _saveSettings() {

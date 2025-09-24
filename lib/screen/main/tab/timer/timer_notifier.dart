@@ -141,6 +141,9 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
   }
 
   void _startTimer() {
+    // 기존 타이머가 있다면 완전히 정지
+    _stopTimer();
+
     final now = DateTime.now();
 
     // 목표 종료 시간이 없으면 설정
@@ -159,11 +162,9 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
     final currentMs = DateTime.now().millisecond;
     final delayToNextSecond = Duration(milliseconds: 1000 - currentMs);
 
-
     // 첫 번째 업데이트는 다음 정각 초에
     Timer(delayToNextSecond, () {
-      if (_timer == null) return; // 이미 취소된 경우
-
+      // 첫 번째 업데이트 실행
       if (state.mode == TimerMode.pomodoro) {
         _updatePomodoroTimer();
       } else {
@@ -171,7 +172,7 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
       }
       _updateRunningNotification();
 
-      // 그 후 정확히 1초마다 주기적 업데이트
+      // 그 후 정확히 1초마다 주기적 업데이트를 위한 새로운 타이머 시작
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
         if (state.mode == TimerMode.pomodoro) {
           _updatePomodoroTimer();
@@ -181,9 +182,6 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
         _updateRunningNotification();
       });
     });
-
-    // 임시 타이머 설정 (취소 가능하도록)
-    _timer = Timer(Duration.zero, () {});
   }
 
   void toggleMode() {
@@ -211,11 +209,12 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
   void start() async {
     if (state.status == TimerStatus.running) return;
 
+    // 완전히 타이머 정지하고 초기화
+    _stopTimer();
+    _targetEndTime = null;
+
     // 기존 완료 알림 취소 (다음 라운드 시작 시)
     await _notificationService.cancelAllNotifications();
-
-    // 이전 타이머 상태 초기화
-    _targetEndTime = null;
 
     final now = DateTime.now();
 
@@ -234,13 +233,7 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
       );
     } else {
       // 새로운 타이머 시작 또는 일시정지에서 재개
-      if (state.status == TimerStatus.paused) {
-        // 일시정지에서 재개 - 남은 시간으로 새로운 종료 시간 계산
-        _targetEndTime = now.add(state.currentTime);
-      } else {
-        // 새로운 타이머 시작
-        _targetEndTime = now.add(state.currentTime);
-      }
+      _targetEndTime = now.add(state.currentTime);
 
       state = state.copyWith(
         status: TimerStatus.running,
@@ -281,6 +274,7 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
   void pause() async {
     if (state.status != TimerStatus.running) return;
 
+    // 완전히 타이머 정지
     _stopTimer();
 
     // 현재 남은 시간을 정확히 계산
@@ -302,6 +296,7 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
       state = state.copyWith(status: TimerStatus.paused);
     }
 
+    // 타이머 상태 완전히 초기화
     _targetEndTime = null;
 
     // 상태 저장
@@ -521,8 +516,11 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
   }
 
   void _stopTimer() async {
-    _timer?.cancel();
-    _timer = null;
+    // 모든 타이머 인스턴스를 확실히 정리
+    if (_timer != null) {
+      _timer!.cancel();
+      _timer = null;
+    }
   }
 
   @override

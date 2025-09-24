@@ -79,7 +79,7 @@ class _TimerSettingsDialogState extends ConsumerState<TimerSettingsDialog> {
                 Container(
                   width: double.infinity,
                   child: _buildActionButton(
-                    '테스트용 5초 설정',
+                    _isTestMode() ? '기본값으로 복원' : '테스트용 5초 설정',
                     _setTestMode,
                     isPrimary: false,
                     isTest: true,
@@ -225,7 +225,22 @@ class _TimerSettingsDialogState extends ConsumerState<TimerSettingsDialog> {
     );
   }
 
+  bool _isTestMode() {
+    final currentSettings = ref.read(timerProvider).settings;
+    return currentSettings.totalRounds == 2 &&
+           currentSettings.focusTime.inSeconds == 5 &&
+           currentSettings.shortBreakTime.inSeconds == 5 &&
+           currentSettings.longBreakTime.inSeconds == 5;
+  }
+
   void _setTestMode() {
+    // 현재 테스트 모드인지 확인
+    if (_isTestMode()) {
+      // 이미 테스트 모드라면 기본값으로 복원
+      _setDefaultSettings();
+      return;
+    }
+
     setState(() {
       totalRounds = 2;
       focusMinutes = 0; // 5초는 분으로 표현할 수 없으므로 0으로 설정
@@ -252,6 +267,39 @@ class _TimerSettingsDialogState extends ConsumerState<TimerSettingsDialog> {
         ),
         duration: Duration(seconds: 2),
         backgroundColor: Color(0xFFF59E0B),
+      ),
+    );
+
+    Navigator.of(context).pop();
+  }
+
+  void _setDefaultSettings() {
+    setState(() {
+      totalRounds = 4;
+      focusMinutes = 25;
+      shortBreakMinutes = 5;
+      longBreakMinutes = 15;
+    });
+
+    // 기본값으로 저장
+    const defaultSettings = TimerSettings(
+      totalRounds: 4,
+      focusTime: Duration(minutes: 25),
+      shortBreakTime: Duration(minutes: 5),
+      longBreakTime: Duration(minutes: 15),
+    );
+
+    ref.read(timerProvider.notifier).updateSettings(defaultSettings);
+
+    // 기본값 복원 스낵바 표시
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          '기본 설정으로 복원되었습니다!',
+          style: TextStyle(fontFamily: 'OmyuPretty'),
+        ),
+        duration: Duration(seconds: 2),
+        backgroundColor: Color(0xFF059669),
       ),
     );
 

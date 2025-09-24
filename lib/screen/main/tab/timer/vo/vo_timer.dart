@@ -83,6 +83,7 @@ class TimerState {
     DateTime? startTime,
     DateTime? endTime,
     int? completedRounds,
+    bool clearEndTime = false,
   }) {
     return TimerState(
       mode: mode ?? this.mode,
@@ -92,7 +93,7 @@ class TimerState {
       round: round ?? this.round,
       settings: settings ?? this.settings,
       startTime: startTime ?? this.startTime,
-      endTime: endTime ?? this.endTime,
+      endTime: clearEndTime ? null : (endTime ?? this.endTime),
       completedRounds: completedRounds ?? this.completedRounds,
     );
   }
@@ -120,5 +121,33 @@ class TimerState {
 
   List<bool> get roundProgress {
     return List.generate(settings.totalRounds, (index) => index < completedRounds);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'mode': mode.name,
+      'status': status.name,
+      'currentTimeSeconds': currentTime.inSeconds,
+      'currentRound': currentRound,
+      'round': round.name,
+      'startTimeMillis': startTime?.millisecondsSinceEpoch,
+      'endTimeMillis': endTime?.millisecondsSinceEpoch,
+      'completedRounds': completedRounds,
+      'settings': settings.toJson(),
+    };
+  }
+
+  factory TimerState.fromJson(Map<String, dynamic> json) {
+    return TimerState(
+      mode: TimerMode.values.firstWhere((e) => e.name == json['mode'], orElse: () => TimerMode.pomodoro),
+      status: TimerStatus.values.firstWhere((e) => e.name == json['status'], orElse: () => TimerStatus.stopped),
+      currentTime: Duration(seconds: json['currentTimeSeconds'] ?? 0),
+      currentRound: json['currentRound'] ?? 1,
+      round: PomodoroRound.values.firstWhere((e) => e.name == json['round'], orElse: () => PomodoroRound.focus),
+      startTime: json['startTimeMillis'] != null ? DateTime.fromMillisecondsSinceEpoch(json['startTimeMillis']) : null,
+      endTime: json['endTimeMillis'] != null ? DateTime.fromMillisecondsSinceEpoch(json['endTimeMillis']) : null,
+      completedRounds: json['completedRounds'] ?? 0,
+      settings: TimerSettings.fromJson(json['settings'] ?? {}),
+    );
   }
 }

@@ -47,6 +47,8 @@ dependencies:
 
   # Background Execution
   flutter_background: ^1.2.0
+  permission_handler: ^11.1.0
+  device_info_plus: ^10.1.0
 
 dev_dependencies:
   flutter_test:

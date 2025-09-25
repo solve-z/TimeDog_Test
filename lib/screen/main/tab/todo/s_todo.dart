@@ -145,11 +145,11 @@ class _TodoScreenState extends State<TodoScreen> {
   Widget _buildCurrentView() {
     switch (_viewIndex) {
       case 0:
-        return TodoListFragment(categories: todoItems);
+        return TodoListFragment(todos: dummyTodoItems);
       case 1:
-        return TimeRecordFragment(categories: todoItems);
+        return TimeRecordFragment(todos: dummyTodoItems);
       default:
-        return TodoListFragment(categories: todoItems);
+        return TodoListFragment(todos: dummyTodoItems);
     }
   }
 

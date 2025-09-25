@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'vo/vo_todo_category.dart';
 import 'vo/vo_todo_item.dart';
 
 class TimeRecordFragment extends StatefulWidget {
-  final List<TodoCategoryVo> categories;
+  final List<TodoItemVo> todos;
 
-  const TimeRecordFragment({super.key, required this.categories});
+  const TimeRecordFragment({super.key, required this.todos});
 
   @override
   State<TimeRecordFragment> createState() => _TimeRecordFragmentState();
@@ -57,17 +56,32 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
   }
 
   Widget _buildCategoryList() {
+    // 카테고리별로 그룹화
+    Map<String, List<TodoItemVo>> grouped = {};
+    for (var todo in widget.todos) {
+      String category = todo.category ?? '기타';
+      if (!grouped.containsKey(category)) {
+        grouped[category] = [];
+      }
+      grouped[category]!.add(todo);
+    }
+
     return SizedBox(
       width: 80,
       child: Column(
         children: [
-          const SizedBox(height: 8), // 카테고리 시작 지점을 아래로 내리기 위한 여백
-          ...widget.categories.map((category) {
+          const SizedBox(height: 8),
+          ...grouped.entries.map((entry) {
+            String categoryName = entry.key;
+            List<TodoItemVo> todos = entry.value;
+            Color categoryColor = todos.first.color;
+            Color accentColor = todos.first.accentColor;
+
             return Container(
               height: 36,
               margin: const EdgeInsets.symmetric(vertical: 5),
               decoration: BoxDecoration(
-                color: category.backgroundColor,
+                color: categoryColor.withOpacity(0.1),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(8),
                   bottomLeft: Radius.circular(8),
@@ -76,10 +90,10 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
               child: Row(
                 children: [
                   Container(
-                    width: 16, // 20% of 80px width
+                    width: 16,
                     height: double.infinity,
                     decoration: BoxDecoration(
-                      color: category.accentColor,
+                      color: accentColor,
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(8),
                         bottomLeft: Radius.circular(8),
@@ -89,7 +103,7 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
                   Expanded(
                     child: Center(
                       child: Text(
-                        category.name,
+                        categoryName,
                         style: const TextStyle(
                           color: Color(0xFF303030),
                           fontSize: 12,
@@ -204,14 +218,12 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
     Color? resultColor;
 
     // 해당 시간 슬롯과 10분 단위에서 집중 진행률 계산
-    for (final category in widget.categories) {
-      for (final todo in category.todos) {
-        for (final record in todo.focusTimeRecords) {
-          final progress = _calculateProgress(record, timeIndex, columnIndex);
-          if (progress > maxProgress) {
-            maxProgress = progress;
-            resultColor = category.backgroundColor;
-          }
+    for (final todo in widget.todos) {
+      for (final record in todo.focusTimeRecords) {
+        final progress = _calculateProgress(record, timeIndex, columnIndex);
+        if (progress > maxProgress) {
+          maxProgress = progress;
+          resultColor = todo.color.withOpacity(0.3);
         }
       }
     }

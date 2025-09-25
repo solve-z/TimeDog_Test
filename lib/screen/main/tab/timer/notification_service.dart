@@ -89,12 +89,13 @@ class NotificationService {
           }
         }
 
-        // 5. 배터리 최적화 예외 요청
+        // 5. 배터리 최적화 예외 요청 (Doze 모드 대응)
         final ignoreBatteryOptimizationStatus = await Permission.ignoreBatteryOptimizations.status;
         if (!ignoreBatteryOptimizationStatus.isGranted) {
           final result = await Permission.ignoreBatteryOptimizations.request();
           if (!result.isGranted) {
             print('배터리 최적화 예외 권한이 거부되었습니다. 설정에서 수동으로 해제해주세요.');
+            print('설정 > 앱 > TimeDog > 배터리 > 배터리 사용량 최적화에서 "최적화 안함"으로 설정해주세요.');
           }
         }
 
@@ -134,6 +135,48 @@ class NotificationService {
       showWhen: false,
       enableVibration: false,
       playSound: false,
+      // Doze 모드 대응을 위한 설정
+      category: AndroidNotificationCategory.alarm,
+      fullScreenIntent: false,
+      // 백그라운드에서도 알림이 지속되도록 설정
+      visibility: NotificationVisibility.public,
+      enableLights: false,
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: false,
+      presentBadge: false,
+      presentSound: false,
+    );
+
+    const details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _notifications.show(
+      1,
+      'TimeDog - $phase',
+      '남은 시간: $timeRemaining',
+      details,
+    );
+  }
+
+  Future<void> showTimerPausedNotification({
+    required String timeRemaining,
+    required String phase,
+  }) async {
+    const androidDetails = AndroidNotificationDetails(
+      'timer_paused',
+      'Timer Paused',
+      channelDescription: 'Shows timer status when paused',
+      importance: Importance.low,
+      priority: Priority.low,
+      ongoing: false,
+      autoCancel: false,
+      showWhen: false,
+      enableVibration: false,
+      playSound: false,
     );
 
     const iosDetails = DarwinNotificationDetails(
@@ -159,7 +202,7 @@ class NotificationService {
     required String title,
     required String message,
   }) async {
-    const androidDetails = AndroidNotificationDetails(
+    final androidDetails = AndroidNotificationDetails(
       'timer_complete',
       'Timer Complete',
       channelDescription: 'Notifications when timer completes',
@@ -167,6 +210,14 @@ class NotificationService {
       priority: Priority.high,
       enableVibration: true,
       playSound: true,
+      // Doze 모드에서도 알림이 표시되도록 설정
+      category: AndroidNotificationCategory.alarm,
+      fullScreenIntent: true,
+      visibility: NotificationVisibility.public,
+      enableLights: true,
+      // 화면이 꺼져 있어도 알림 표시
+      showWhen: true,
+      when: DateTime.now().millisecondsSinceEpoch,
     );
 
     const iosDetails = DarwinNotificationDetails(
@@ -175,7 +226,7 @@ class NotificationService {
       presentSound: true,
     );
 
-    const details = NotificationDetails(
+    final details = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );

@@ -303,9 +303,10 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
     _saveState();
 
     try {
-      // 백그라운드 실행 비활성화 및 알림 제거
+      // 백그라운드 실행 비활성화 (알림은 일시정지 상태 표시를 위해 유지)
       await _notificationService.disableBackgroundExecution();
-      await _notificationService.cancelRunningNotification();
+      // 일시정지 상태 알림 표시
+      _updatePausedNotification();
     } catch (e) {
       print('백그라운드 실행 비활성화 실패: $e');
     }
@@ -487,6 +488,7 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
   }
 
   void _updateRunningNotification() async {
+    // 타이머가 실행 중일 때만 진행 상황 알림 표시
     if (state.status != TimerStatus.running) return;
 
     // 00:00일 때는 알림 업데이트 안함 (완료 알림이 곧 표시될 예정)
@@ -509,7 +511,36 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
       phase = '스톱워치';
     }
 
+    // 진행 상황과 모드/라운드 정보를 표시하는 지속적 알림
     await _notificationService.showTimerRunningNotification(
+      timeRemaining: state.formattedTime,
+      phase: phase,
+    );
+  }
+
+  void _updatePausedNotification() async {
+    // 일시정지 상태에서만 일시정지 알림 표시
+    if (state.status != TimerStatus.paused) return;
+
+    String phase;
+    if (state.mode == TimerMode.pomodoro) {
+      switch (state.round) {
+        case PomodoroRound.focus:
+          phase = '집중 시간 (${state.currentRound}/${state.settings.totalRounds}) - 일시정지';
+          break;
+        case PomodoroRound.shortBreak:
+          phase = '짧은 휴식 - 일시정지';
+          break;
+        case PomodoroRound.longBreak:
+          phase = '긴 휴식 - 일시정지';
+          break;
+      }
+    } else {
+      phase = '스톱워치 - 일시정지';
+    }
+
+    // 일시정지 상태 표시 알림
+    await _notificationService.showTimerPausedNotification(
       timeRemaining: state.formattedTime,
       phase: phase,
     );

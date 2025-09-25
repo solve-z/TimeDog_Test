@@ -292,213 +292,163 @@ class TimerScreen extends ConsumerWidget {
   }
 
   void _showTodoSelectionDialog(BuildContext context, WidgetRef ref) {
+    bool showDateSelection = false;
+    String selectedDateFilter = '오늘';
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder:
-          (context) => Container(
-            height: MediaQuery.of(context).size.height * 0.6,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
-            ),
-            child: Consumer(
-              builder: (context, ref, child) {
-                final todoState = ref.watch(todoProvider);
-                final todoNotifier = ref.read(todoProvider.notifier);
+          (context) => StatefulBuilder(
+            builder: (context, setState) {
+              return Container(
+                height: MediaQuery.of(context).size.height * 0.6,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                ),
+                child: Consumer(
+                  builder: (context, ref, child) {
+                    final todoState = ref.watch(todoProvider);
+                    final todoNotifier = ref.read(todoProvider.notifier);
 
-                return Column(
-                  children: [
-                    // 드래그 핸들
-                    Container(
-                      margin: const EdgeInsets.symmetric(vertical: 12),
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
+                    return Column(
+                      children: [
+                        // 드래그 핸들
+                        Container(
+                          margin: const EdgeInsets.symmetric(vertical: 12),
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
 
-                    // 헤더
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 8,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF3F4F6),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  '오늘',
-                                  style: TextStyle(
-                                    fontFamily: 'OmyuPretty',
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFF374151),
+                        // 헤더
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 8,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    showDateSelection = !showDateSelection;
+                                  });
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF3F4F6),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        selectedDateFilter,
+                                        style: const TextStyle(
+                                          fontFamily: 'OmyuPretty',
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          color: Color(0xFF374151),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      const Icon(
+                                        Icons.keyboard_arrow_down,
+                                        size: 16,
+                                        color: Color(0xFF6B7280),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                SizedBox(width: 4),
-                                Icon(
-                                  Icons.keyboard_arrow_down,
-                                  size: 16,
-                                  color: Color(0xFF6B7280),
-                                ),
-                              ],
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () => _showAddTodoDialog(context, ref),
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: const BoxDecoration(
-                                color: AppColors.primary,
-                                shape: BoxShape.circle,
                               ),
-                              child: const Icon(
-                                Icons.add,
-                                color: Colors.white,
-                                size: 24,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // 할일 목록
-                    Expanded(
-                      child: ListView.separated(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        itemCount: todoState.allTodos.length,
-                        separatorBuilder:
-                            (context, index) => const Divider(
-                              height: 1,
-                              thickness: 1,
-                              color: Color(0xFFE5E7EB),
-                            ),
-                        itemBuilder: (context, index) {
-                          final todo = todoState.allTodos[index];
-                          final isSelected =
-                              todoState.selectedTodo?.id == todo.id;
-
-                          return Container(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            child: Row(
-                              children: [
-                                // 카테고리 색상 원형
-                                Container(
-                                  width: 16,
-                                  height: 16,
-                                  decoration: BoxDecoration(
-                                    color: todo.color,
+                              GestureDetector(
+                                onTap: () => _showAddTodoDialog(context, ref),
+                                child: Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.primary,
                                     shape: BoxShape.circle,
                                   ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    todo.title,
-                                    style: TextStyle(
-                                      fontFamily: 'OmyuPretty',
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                      color:
-                                          isSelected
-                                              ? todo.color
-                                              : const Color(0xFF374151),
-                                    ),
+                                  child: const Icon(
+                                    Icons.add,
+                                    color: Colors.white,
+                                    size: 24,
                                   ),
                                 ),
-                                GestureDetector(
-                                  onTap: () {
-                                    todoNotifier.selectTodo(
-                                      isSelected ? null : todo,
-                                    );
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          isSelected
-                                              ? todo.color
-                                              : const Color(0xFFF3F4F6),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      isSelected ? '선택됨' : '실행',
-                                      style: TextStyle(
-                                        fontFamily: 'OmyuPretty',
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                        color:
-                                            isSelected
-                                                ? Colors.white
-                                                : const Color(0xFF6B7280),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-
-                    // 닫기 버튼
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      child: SafeArea(
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: TextButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              backgroundColor: const Color(0xFFF3F4F6),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
                               ),
-                            ),
-                            child: const Text(
-                              '닫기',
-                              style: TextStyle(
-                                fontFamily: 'OmyuPretty',
-                                fontSize: 16,
-                                color: Color(0xFF6B7280),
-                                fontWeight: FontWeight.w500,
+                            ],
+                          ),
+                        ),
+
+                        // 내용 영역 (날짜 선택 또는 할일 목록)
+                        Expanded(
+                          child:
+                              showDateSelection
+                                  ? _buildDateSelectionContent(
+                                    context,
+                                    ref,
+                                    selectedDateFilter,
+                                    (filter) {
+                                      setState(() {
+                                        selectedDateFilter = filter;
+                                        showDateSelection = false;
+                                      });
+                                    },
+                                  )
+                                  : _buildFilteredTodoList(todoState, todoNotifier, selectedDateFilter),
+                        ),
+
+                        // 닫기 버튼
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          child: SafeArea(
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: TextButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  backgroundColor: const Color(0xFFF3F4F6),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text(
+                                  '닫기',
+                                  style: TextStyle(
+                                    fontFamily: 'OmyuPretty',
+                                    fontSize: 16,
+                                    color: Color(0xFF6B7280),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
+                      ],
+                    );
+                  },
+                ),
+              );
+            },
           ),
     );
   }
@@ -1135,5 +1085,230 @@ class TimerScreen extends ConsumerWidget {
     final minutes = duration.inMinutes.toString().padLeft(2, '0');
     final seconds = (duration.inSeconds % 60).toString().padLeft(2, '0');
     return '$minutes:$seconds';
+  }
+
+  Widget _buildDateSelectionContent(
+    BuildContext context,
+    WidgetRef ref,
+    String currentFilter,
+    Function(String) onFilterSelected,
+  ) {
+    final dateOptions = [
+      {'title': '오늘', 'icon': Icons.wb_sunny_outlined},
+      {'title': '내일', 'icon': Icons.wb_twilight_outlined},
+      {'title': '이번 주', 'icon': Icons.calendar_today_outlined},
+    ];
+
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          // 날짜 옵션들
+          ...dateOptions.map((option) {
+            final isSelected = option['title'] == currentFilter;
+            return _buildFilterOption(
+              option['title'] as String,
+              option['icon'] as IconData,
+              isSelected,
+              () => onFilterSelected(option['title'] as String),
+            );
+          }).toList(),
+
+          // 카테고리 목록 (날짜 옵션 바로 아래 이어서)
+          ..._globalCategories.map((category) {
+            final isSelected = category['name'] == currentFilter;
+            return _buildCategoryFilterOption(
+              category['name'] as String,
+              category['color'] as Color,
+              isSelected,
+              () => onFilterSelected(category['name'] as String),
+            );
+          }).toList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterOption(
+    String title,
+    IconData icon,
+    bool isSelected,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            bottom: BorderSide(color: Color(0xFFE5E7EB), width: 1),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: const Color(0xFF6B7280)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontFamily: 'OmyuPretty',
+                  fontSize: 16,
+                  color: Color(0xFF111827),
+                ),
+              ),
+            ),
+            if (isSelected)
+              const Icon(Icons.check, color: Color(0xFF6366F1), size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryFilterOption(
+    String title,
+    Color color,
+    bool isSelected,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            bottom: BorderSide(color: Color(0xFFE5E7EB), width: 1),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 16,
+              height: 16,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontFamily: 'OmyuPretty',
+                  fontSize: 16,
+                  color: Color(0xFF111827),
+                ),
+              ),
+            ),
+            if (isSelected)
+              const Icon(Icons.check, color: Color(0xFF6366F1), size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilteredTodoList(TodoState todoState, TodoNotifier todoNotifier, String filter) {
+    final filteredTodos = _getFilteredTodos(todoState.allTodos, filter);
+
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      itemCount: filteredTodos.length,
+      separatorBuilder: (context, index) => const Divider(
+        height: 1,
+        thickness: 1,
+        color: Color(0xFFE5E7EB),
+      ),
+      itemBuilder: (context, index) {
+        final todo = filteredTodos[index];
+        final isSelected = todoState.selectedTodo?.id == todo.id;
+
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Row(
+            children: [
+              // 카테고리 색상 원형
+              Container(
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: todo.color,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  todo.title,
+                  style: TextStyle(
+                    fontFamily: 'OmyuPretty',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: isSelected ? todo.color : const Color(0xFF374151),
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  todoNotifier.selectTodo(isSelected ? null : todo);
+                  Navigator.of(context).pop();
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isSelected ? todo.color : const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    isSelected ? '선택됨' : '실행',
+                    style: TextStyle(
+                      fontFamily: 'OmyuPretty',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: isSelected ? Colors.white : const Color(0xFF6B7280),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  List<TodoItemVo> _getFilteredTodos(List<TodoItemVo> todos, String filter) {
+    switch (filter) {
+      case '오늘':
+        return todos.where((todo) => _isToday(todo.scheduledDate)).toList();
+      case '내일':
+        return todos.where((todo) => _isTomorrow(todo.scheduledDate)).toList();
+      case '이번 주':
+        return todos.where((todo) => _isThisWeek(todo.scheduledDate)).toList();
+      default:
+        // 카테고리 필터
+        return todos.where((todo) => todo.category == filter).toList();
+    }
+  }
+
+  bool _isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year && date.month == now.month && date.day == now.day;
+  }
+
+  bool _isTomorrow(DateTime date) {
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    return date.year == tomorrow.year && date.month == tomorrow.month && date.day == tomorrow.day;
+  }
+
+  bool _isThisWeek(DateTime date) {
+    final now = DateTime.now();
+    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+    final endOfWeek = startOfWeek.add(const Duration(days: 6));
+
+    return date.isAfter(startOfWeek.subtract(const Duration(days: 1))) &&
+           date.isBefore(endOfWeek.add(const Duration(days: 1)));
   }
 }

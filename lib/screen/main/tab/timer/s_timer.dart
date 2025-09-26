@@ -829,6 +829,7 @@ class TimerScreen extends ConsumerWidget {
 
     return await showDialog<Map<String, dynamic>>(
       context: context,
+      barrierColor: Colors.black87,
       builder:
           (context) => StatefulBuilder(
             builder:
@@ -837,8 +838,10 @@ class TimerScreen extends ConsumerWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
+                  insetPadding: const EdgeInsets.all(16),
                   child: Container(
-                    constraints: const BoxConstraints(maxWidth: 350),
+                    width: MediaQuery.of(context).size.width,
+                    height: MediaQuery.of(context).size.height * 0.8,
                     decoration: const BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.all(Radius.circular(20)),

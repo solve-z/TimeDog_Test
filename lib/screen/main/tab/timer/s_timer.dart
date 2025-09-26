@@ -22,9 +22,86 @@ class TimerScreen extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
-            const SizedBox(height: 30),
+            const Spacer(flex: 1),
 
-            // 모드, 할일, 설정 영역
+            // 할일 선택 영역
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Center(
+                child: GestureDetector(
+                  onTap: () => _showTodoSelectionDialog(context, ref),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          todoState.selectedTodo?.color.withOpacity(
+                            0.1,
+                          ) ??
+                          const Color(0xFFF9FAFB),
+                      border: Border.all(
+                        color:
+                            todoState.selectedTodo?.color.withOpacity(
+                              0.3,
+                            ) ??
+                            const Color(0xFFE5E7EB),
+                        width: 1,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (todoState.selectedTodo != null) ...[
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: todoState.selectedTodo!.color,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              todoState.selectedTodo!.title,
+                              style: const TextStyle(
+                                fontFamily: 'OmyuPretty',
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF374151),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ] else ...[
+                          const Icon(
+                            Icons.add_circle_outline,
+                            size: 16,
+                            color: Color(0xFF9CA3AF),
+                          ),
+                          const SizedBox(width: 6),
+                          const Text(
+                            '할일 선택',
+                            style: TextStyle(
+                              fontFamily: 'OmyuPretty',
+                              fontSize: 13,
+                              color: Color(0xFF9CA3AF),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // 타이머 표시 (모드, 타이머)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
@@ -34,149 +111,53 @@ class TimerScreen extends ConsumerWidget {
                   GestureDetector(
                     onTap: () => timerNotifier.toggleMode(),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE5E7EB),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        timerState.mode == TimerMode.pomodoro ? '뽀모도로' : '스톱워치',
-                        style: const TextStyle(
-                          fontFamily: 'OmyuPretty',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF6B7280),
+                      padding: const EdgeInsets.all(12),
+                      child: SvgPicture.asset(
+                        timerState.mode == TimerMode.pomodoro
+                            ? 'assets/images/icons/pomodoro.svg'
+                            : 'assets/images/icons/stopwatch.svg',
+                        width: 28,
+                        height: 28,
+                        colorFilter: const ColorFilter.mode(
+                          Color(0xFF6B7280),
+                          BlendMode.srcIn,
                         ),
                       ),
                     ),
                   ),
 
-                  // 중앙: 할일 표시 영역
-                  Flexible(
-                    child: Center(
-                      child: GestureDetector(
-                        onTap: () => _showTodoSelectionDialog(context, ref),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color:
-                                todoState.selectedTodo?.color.withOpacity(
-                                  0.1,
-                                ) ??
-                                const Color(0xFFF9FAFB),
-                            border: Border.all(
-                              color:
-                                  todoState.selectedTodo?.color.withOpacity(
-                                    0.3,
-                                  ) ??
-                                  const Color(0xFFE5E7EB),
-                              width: 1,
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (todoState.selectedTodo != null) ...[
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    color: todoState.selectedTodo!.color,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  todoState.selectedTodo!.title,
-                                  style: const TextStyle(
-                                    fontFamily: 'OmyuPretty',
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFF374151),
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ] else ...[
-                                const Icon(
-                                  Icons.add_circle_outline,
-                                  size: 16,
-                                  color: Color(0xFF9CA3AF),
-                                ),
-                                const SizedBox(width: 6),
-                                const Text(
-                                  '할일 선택',
-                                  style: TextStyle(
-                                    fontFamily: 'OmyuPretty',
-                                    fontSize: 13,
-                                    color: Color(0xFF9CA3AF),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
+                  // 중앙: 타이머 표시
+                  GestureDetector(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => const TimerSettingsDialog(),
+                      );
+                    },
+                    child: Text(
+                      timerState.formattedTime,
+                      style: const TextStyle(
+                        fontFamily: 'OmyuPretty',
+                        fontSize: 64,
+                        fontWeight: FontWeight.w300,
+                        color: Color(0xFF6B7280),
+                        letterSpacing: 4,
                       ),
                     ),
                   ),
 
-                  // 오른쪽: 설정 아이콘
-                  Container(
-                    width: 70, // 왼쪽 모드 버튼과 대칭을 위한 최소 너비
-                    alignment: Alignment.centerRight,
-                    child: GestureDetector(
-                      onTap: () {
-                        // TODO: 설정 화면으로 이동
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        child: SvgPicture.asset(
-                          'assets/images/icons/setting.svg',
-                          width: 20,
-                          height: 20,
-                          colorFilter: const ColorFilter.mode(
-                            Color(0xFF6B7280),
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                  // 오른쪽: 빈 공간 (균형을 위한 Spacer)
+                  const SizedBox(width: 52), // 모드 선택 버튼과 동일한 너비
                 ],
               ),
             ),
-            const SizedBox(height: 20),
 
-            // 타이머 표시
+            // 타이머 상태 정보
             Stack(
               children: [
                 Column(
                   children: [
-                    GestureDetector(
-                      onTap: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => const TimerSettingsDialog(),
-                        );
-                      },
-                      child: Text(
-                        timerState.formattedTime,
-                        style: const TextStyle(
-                          fontFamily: 'OmyuPretty',
-                          fontSize: 64,
-                          fontWeight: FontWeight.w300,
-                          color: Color(0xFF6B7280),
-                          letterSpacing: 4,
-                        ),
-                      ),
-                    ),
+                    const SizedBox(height: 10),
                     if (timerState.startTime != null &&
                         timerState.status == TimerStatus.running)
                       Text(
@@ -247,7 +228,7 @@ class TimerScreen extends ConsumerWidget {
 
             // 캐릭터 애니메이션 영역
             const CharacterAnimationFragment(),
-            const SizedBox(height: 15),
+            const SizedBox(height: 40),
 
             // 컨트롤 버튼들
             Padding(
@@ -268,14 +249,14 @@ class TimerScreen extends ConsumerWidget {
                     },
                     timerState.status == TimerStatus.running ? '일시정지' : '시작',
                   ),
-                  const SizedBox(width: 20),
+                  const SizedBox(width: 30),
                   if (timerState.mode == TimerMode.pomodoro) ...[
                     _buildControlButton(
                       'assets/images/icons/x.svg',
                       () => timerNotifier.stop(),
                       '중지',
                     ),
-                    const SizedBox(width: 20),
+                    const SizedBox(width: 30),
                   ],
                   _buildControlButton(
                     'assets/images/icons/rotate.svg',
@@ -285,6 +266,7 @@ class TimerScreen extends ConsumerWidget {
                 ],
               ),
             ),
+            const Spacer(flex: 2),
           ],
         ),
       ),
@@ -1051,10 +1033,10 @@ class TimerScreen extends ConsumerWidget {
   ) {
     return InkWell(
       onTap: onPressed,
-      borderRadius: BorderRadius.circular(25),
+      borderRadius: BorderRadius.circular(35),
       child: Container(
-        width: 50,
-        height: 50,
+        width: 70,
+        height: 70,
         decoration: const BoxDecoration(
           shape: BoxShape.circle,
           color: Colors.transparent,
@@ -1062,8 +1044,8 @@ class TimerScreen extends ConsumerWidget {
         child: Center(
           child: SvgPicture.asset(
             iconPath,
-            width: 24,
-            height: 24,
+            width: 32,
+            height: 32,
             colorFilter: const ColorFilter.mode(
               Color(0xFF666666),
               BlendMode.srcIn,

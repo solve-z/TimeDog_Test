@@ -68,6 +68,42 @@ class TodoItemVo {
       updatedAt: DateTime.now(),
     );
   }
+
+  // JSON 직렬화
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'category': category,
+      'color': color.value,
+      'accentColor': accentColor.value,
+      'scheduledDate': scheduledDate.toIso8601String(),
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+      'isCompleted': isCompleted,
+      'focusTimeRecords': focusTimeRecords.map((record) => record.toJson()).toList(),
+    };
+  }
+
+  // JSON 역직렬화
+  factory TodoItemVo.fromJson(Map<String, dynamic> json) {
+    return TodoItemVo(
+      id: json['id'],
+      title: json['title'],
+      description: json['description'],
+      category: json['category'],
+      color: Color(json['color']),
+      accentColor: Color(json['accentColor']),
+      scheduledDate: DateTime.parse(json['scheduledDate']),
+      createdAt: DateTime.parse(json['createdAt']),
+      updatedAt: DateTime.parse(json['updatedAt']),
+      isCompleted: json['isCompleted'],
+      focusTimeRecords: (json['focusTimeRecords'] as List)
+          .map((record) => FocusTimeRecord.fromJson(record))
+          .toList(),
+    );
+  }
 }
 
 class FocusTimeRecord {
@@ -100,6 +136,29 @@ class FocusTimeRecord {
     } else {
       return '${mins}분';
     }
+  }
+
+  // JSON 직렬화
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'startTime': startTime.toIso8601String(),
+      'endTime': endTime.toIso8601String(),
+      'focusType': focusType.toString(),
+    };
+  }
+
+  // JSON 역직렬화
+  factory FocusTimeRecord.fromJson(Map<String, dynamic> json) {
+    return FocusTimeRecord(
+      id: json['id'],
+      startTime: DateTime.parse(json['startTime']),
+      endTime: DateTime.parse(json['endTime']),
+      focusType: FocusType.values.firstWhere(
+        (type) => type.toString() == json['focusType'],
+        orElse: () => FocusType.pomodoro,
+      ),
+    );
   }
 }
 

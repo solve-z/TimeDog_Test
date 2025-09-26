@@ -47,22 +47,32 @@ class _TodoScreenState extends ConsumerState<TodoScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _buildInfoCard(),
-        _buildActionButtons(),
-        const SizedBox(height: 12),
-        Container(
-          width: double.infinity,
-          height: 1,
-          color: Colors.grey.shade300,
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Column(
+            children: [
+              _buildInfoCard(),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                height: 1,
+                color: Colors.grey.shade300,
+              ),
+              const SizedBox(height: 16),
+              _buildViewHeader(),
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
-        const SizedBox(height: 16),
-        Expanded(
+        SliverToBoxAdapter(
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 32),
+            margin: EdgeInsets.symmetric(horizontal: _viewIndex == 0 ? 24 : 48),
             child: _buildCurrentView(),
           ),
+        ),
+        const SliverToBoxAdapter(
+          child: SizedBox(height: 100), // SafeArea 공간
         ),
       ],
     );
@@ -285,11 +295,23 @@ class _TodoScreenState extends ConsumerState<TodoScreen>
 
     switch (_viewIndex) {
       case 0:
-        return TodoListFragment(filteredTodos: filteredTodos);
+        return TodoListFragment(
+          filteredTodos: filteredTodos,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+        );
       case 1:
-        return TimeRecordFragment(todos: filteredTodos);
+        return TimeRecordFragment(
+          todos: filteredTodos,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+        );
       default:
-        return TodoListFragment(filteredTodos: filteredTodos);
+        return TodoListFragment(
+          filteredTodos: filteredTodos,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+        );
     }
   }
 
@@ -340,56 +362,71 @@ class _TodoScreenState extends ConsumerState<TodoScreen>
     }
   }
 
-  Widget _buildActionButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        GestureDetector(
-          onTap: () {
-            setState(() {
-              _viewIndex = 0; // 할일리스트
-            });
-          },
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color:
-                  _viewIndex == 0
-                      ? AppColors.primary.withOpacity(0.2)
-                      : Colors.grey.shade100,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.edit,
-              color: _viewIndex == 0 ? AppColors.primary : Colors.grey,
-              size: 20,
+  Widget _buildViewHeader() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 32),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            _viewIndex == 0 ? 'Task' : 'Time Record',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
             ),
           ),
-        ),
-        const SizedBox(width: 16),
-        GestureDetector(
-          onTap: () {
-            setState(() {
-              _viewIndex = 1; // 타임레코드
-            });
-          },
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color:
-                  _viewIndex == 1
-                      ? AppColors.primary.withOpacity(0.2)
-                      : Colors.grey.shade100,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.access_time,
-              color: _viewIndex == 1 ? AppColors.primary : Colors.grey,
-              size: 20,
-            ),
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _viewIndex = 0;
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color:
+                        _viewIndex == 0
+                            ? AppColors.primary.withOpacity(0.2)
+                            : Colors.grey.shade100,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.edit,
+                    color: _viewIndex == 0 ? AppColors.primary : Colors.grey,
+                    size: 16,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _viewIndex = 1;
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color:
+                        _viewIndex == 1
+                            ? AppColors.primary.withOpacity(0.2)
+                            : Colors.grey.shade100,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.access_time,
+                    color: _viewIndex == 1 ? AppColors.primary : Colors.grey,
+                    size: 16,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

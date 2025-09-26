@@ -6,8 +6,10 @@ import '../../../../common/constant/app_constants.dart';
 
 class TodoListFragment extends ConsumerStatefulWidget {
   final List<TodoItemVo>? filteredTodos; // 필터된 할일 목록 (선택적)
+  final ScrollPhysics? physics; // 스크롤 물리학 설정
+  final bool shrinkWrap; // 내용 크기에 맞게 조정
 
-  const TodoListFragment({super.key, this.filteredTodos});
+  const TodoListFragment({super.key, this.filteredTodos, this.physics, this.shrinkWrap = false});
 
   @override
   ConsumerState<TodoListFragment> createState() => _TodoListFragmentState();
@@ -431,6 +433,8 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
 
     return ListView.builder(
       padding: EdgeInsets.zero,
+      physics: widget.physics,
+      shrinkWrap: widget.shrinkWrap,
       itemCount:
           groupedTodos.length * 2 +
           groupedTodos.values.fold(0, (sum, todos) => sum + todos.length),

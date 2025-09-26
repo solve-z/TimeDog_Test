@@ -3,8 +3,10 @@ import 'vo/vo_todo_item.dart';
 
 class TimeRecordFragment extends StatefulWidget {
   final List<TodoItemVo> todos;
+  final ScrollPhysics? physics;
+  final bool shrinkWrap;
 
-  const TimeRecordFragment({super.key, required this.todos});
+  const TimeRecordFragment({super.key, required this.todos, this.physics, this.shrinkWrap = false});
 
   @override
   State<TimeRecordFragment> createState() => _TimeRecordFragmentState();
@@ -52,15 +54,55 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
     return text.split('').join('\n');
   }
 
+  // 카테고리 텍스트 포맷팅 (너비가 늘어났으므로 2줄로 표시)
+  String _formatCategoryText(String text) {
+    if (text.length <= 4) {
+      return text;
+    } else if (text.length <= 8) {
+      // 4글자씩 나누어 2줄로
+      int mid = (text.length / 2).ceil();
+      return text.substring(0, mid) + '\n' + text.substring(mid);
+    } else {
+      // 8글자 초과시 7글자까지 표시하고 ...
+      return text.substring(0, 3) + '\n' + text.substring(3, 6) + '...';
+    }
+  }
+
+  // 카테고리 이름 길이에 따른 폰트 크기 조정
+  double _getCategoryFontSize(String text) {
+    if (text.length <= 4) {
+      return 10.0;
+    } else if (text.length <= 8) {
+      return 9.0;
+    } else {
+      return 8.0;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildCategoryList(),
-        Expanded(child: _buildTimeGrid()),
-      ],
-    );
+    if (widget.shrinkWrap) {
+      // shrinkWrap이 true일 때는 고정 높이 사용
+      return SizedBox(
+        height: 700, // 충분한 높이 설정
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildCategoryList(),
+            Expanded(child: _buildTimeGrid()),
+          ],
+        ),
+      );
+    } else {
+      // 기본 구조
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildCategoryList(),
+          Expanded(child: _buildTimeGrid()),
+        ],
+      );
+    }
   }
 
   Widget _buildCategoryList() {
@@ -76,8 +118,87 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
 
     return SizedBox(
       width: 30,
-      child: ListView(
-        children: [
+      child: widget.shrinkWrap
+          ? SingleChildScrollView(
+              child: Column(
+                children: [
+                  const SizedBox(height: 8),
+                  ...grouped.entries.map((entry) {
+                    String categoryName = entry.key;
+                    List<TodoItemVo> todos = entry.value;
+                    Color categoryColor = todos.first.color;
+                    Color accentColor = todos.first.accentColor;
+
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          if (_selectedCategory == categoryName) {
+                            _selectedCategory = null;
+                          } else {
+                            _selectedCategory = categoryName;
+                          }
+                        });
+                      },
+                      child: Container(
+                        height: 80,
+                        margin: const EdgeInsets.symmetric(vertical: 5),
+                        decoration: BoxDecoration(
+                          color: _selectedCategory == categoryName
+                              ? categoryColor.withOpacity(0.7)
+                              : categoryColor.withOpacity(0.1),
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(8),
+                            bottomLeft: Radius.circular(8),
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            Container(
+                              width: double.infinity,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: accentColor,
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(8),
+                                  topRight: Radius.circular(8),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                                  child: Text(
+                                    _formatCategoryText(categoryName),
+                                    style: TextStyle(
+                                      color: _selectedCategory == categoryName
+                                          ? Colors.black
+                                          : const Color(0xFF303030),
+                                      fontSize: _getCategoryFontSize(categoryName),
+                                      fontWeight: _selectedCategory == categoryName
+                                          ? FontWeight.w600
+                                          : FontWeight.w500,
+                                      height: 1.1,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            )
+          : ListView(
+              physics: widget.physics,
+              children: [
           const SizedBox(height: 8),
           ...grouped.entries.map((entry) {
             String categoryName = entry.key;
@@ -126,19 +247,19 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
                           child: Text(
-                            _formatVerticalText(categoryName),
+                            _formatCategoryText(categoryName),
                             style: TextStyle(
                               color: _selectedCategory == categoryName
                                 ? Colors.black
                                 : const Color(0xFF303030),
-                              fontSize: 10,
+                              fontSize: _getCategoryFontSize(categoryName),
                               fontWeight: _selectedCategory == categoryName
                                 ? FontWeight.w600
                                 : FontWeight.w500,
-                              height: 1.2,
+                              height: 1.1,
                             ),
                             textAlign: TextAlign.center,
-                            maxLines: 10,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -149,8 +270,8 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
               ),
             );
           }),
-          const SizedBox(height: 8),
-        ],
+                const SizedBox(height: 8),
+              ],
       ),
     );
   }
@@ -168,12 +289,23 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
       child: Column(
         children: [
           Expanded(
-            child: ListView.builder(
-              itemCount: timeSlots.length,
-              itemBuilder: (context, index) {
-                return _buildTimeRow(timeSlots[index], index);
-              },
-            ),
+            child: widget.shrinkWrap
+                ? Expanded(
+                    child: Column(
+                      children: timeSlots.asMap().entries.map((entry) {
+                        return Expanded(
+                          child: _buildTimeRow(entry.value, entry.key),
+                        );
+                      }).toList(),
+                    ),
+                  )
+                : ListView.builder(
+                    physics: widget.physics,
+                    itemCount: timeSlots.length,
+                    itemBuilder: (context, index) {
+                      return _buildTimeRow(timeSlots[index], index);
+                    },
+                  ),
           ),
         ],
       ),
@@ -188,8 +320,8 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
       borderRadius = const BorderRadius.only(bottomLeft: Radius.circular(12));
     }
 
-    return SizedBox(
-      height: 28,
+    return Container(
+      height: widget.shrinkWrap ? null : 28, // shrinkWrap일 때는 높이 제한 없음
       child: Row(
         children: [
           Container(

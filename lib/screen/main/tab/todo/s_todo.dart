@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'vo/todo_items_dummy.dart';
 import 'vo/vo_todo_item.dart';
 import 'todo_provider.dart';
 import 'daily_objective_provider.dart';
@@ -15,7 +14,8 @@ class TodoScreen extends ConsumerStatefulWidget {
   ConsumerState<TodoScreen> createState() => _TodoScreenState();
 }
 
-class _TodoScreenState extends ConsumerState<TodoScreen> with TickerProviderStateMixin {
+class _TodoScreenState extends ConsumerState<TodoScreen>
+    with TickerProviderStateMixin {
   int _viewIndex = 0; // 0: 할일리스트, 1: 타임레코드
   DateTime _selectedDate = DateTime.now(); // 선택된 날짜
   bool _isInfoCardExpanded = true; // InfoCard 펼침/접힘 상태
@@ -60,7 +60,7 @@ class _TodoScreenState extends ConsumerState<TodoScreen> with TickerProviderStat
         const SizedBox(height: 16),
         Expanded(
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
+            margin: const EdgeInsets.symmetric(horizontal: 32),
             child: _buildCurrentView(),
           ),
         ),
@@ -70,7 +70,7 @@ class _TodoScreenState extends ConsumerState<TodoScreen> with TickerProviderStat
 
   Widget _buildInfoCard() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Colors.grey.shade300),
@@ -86,36 +86,43 @@ class _TodoScreenState extends ConsumerState<TodoScreen> with TickerProviderStat
                 // Date 앞쪽 강조선
                 Container(width: 1, color: Colors.grey.shade400),
                 Expanded(
-                  child: GestureDetector(
-                    onTap: () => _showDatePicker(),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Text(
-                                'Date.',
-                                style: TextStyle(fontSize: 10, color: Colors.grey),
-                              ),
-                              const SizedBox(width: 4),
-                              const Icon(
-                                Icons.keyboard_arrow_down,
-                                size: 10,
-                                color: Colors.grey,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${_selectedDate.year}.${_selectedDate.month.toString().padLeft(2, '0')}.${_selectedDate.day.toString().padLeft(2, '0')}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _showDatePicker(),
+                      borderRadius: BorderRadius.circular(4),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Text(
+                                  'Date.',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                const Icon(
+                                  Icons.keyboard_arrow_down,
+                                  size: 10,
+                                  color: Colors.grey,
+                                ),
+                              ],
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 2),
+                            Text(
+                              "${_selectedDate.year}.${_selectedDate.month.toString().padLeft(2, '0')}.${_selectedDate.day.toString().padLeft(2, '0')}",
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -126,7 +133,7 @@ class _TodoScreenState extends ConsumerState<TodoScreen> with TickerProviderStat
                 Container(width: 1, color: Colors.grey.shade400),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(8),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -138,10 +145,14 @@ class _TodoScreenState extends ConsumerState<TodoScreen> with TickerProviderStat
                         Consumer(
                           builder: (context, ref, child) {
                             final todoState = ref.watch(todoProvider);
-                            final filteredTodos = _getFilteredTodosByDate(todoState.allTodos);
-                            final totalMinutes = filteredTodos.fold(0, (sum, todo) => sum + todo.totalFocusTimeInMinutes);
+                            final filteredTodos = _getFilteredTodosByDate(
+                              todoState.allTodos,
+                            );
+                            final totalMinutes = filteredTodos.fold<int>(
+                              0,
+                              (sum, todo) => sum + todo.totalFocusTimeInMinutes,
+                            );
                             final totalTime = _formatTotalTime(totalMinutes);
-
 
                             return Text(
                               totalTime,
@@ -163,7 +174,7 @@ class _TodoScreenState extends ConsumerState<TodoScreen> with TickerProviderStat
                     onTap: _toggleInfoCard,
                     borderRadius: BorderRadius.circular(20),
                     child: Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(8),
                       child: AnimatedBuilder(
                         animation: _animation,
                         builder: (context, child) {
@@ -208,7 +219,7 @@ class _TodoScreenState extends ConsumerState<TodoScreen> with TickerProviderStat
                             onTap: () => _showObjectiveEditDialog(),
                             borderRadius: BorderRadius.circular(4),
                             child: Padding(
-                              padding: const EdgeInsets.all(12),
+                              padding: const EdgeInsets.all(8),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -216,7 +227,10 @@ class _TodoScreenState extends ConsumerState<TodoScreen> with TickerProviderStat
                                     children: [
                                       const Text(
                                         'Object.',
-                                        style: TextStyle(fontSize: 10, color: Colors.grey),
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.grey,
+                                        ),
                                       ),
                                       const SizedBox(width: 4),
                                       const Icon(
@@ -230,13 +244,20 @@ class _TodoScreenState extends ConsumerState<TodoScreen> with TickerProviderStat
                                   Consumer(
                                     builder: (context, ref, child) {
                                       ref.watch(dailyObjectiveProvider);
-                                      final objective = ref.read(dailyObjectiveProvider.notifier).getObjective(_selectedDate);
+                                      final objective = ref
+                                          .read(dailyObjectiveProvider.notifier)
+                                          .getObjective(_selectedDate);
                                       return Text(
-                                        objective.isEmpty ? '목표를 설정해주세요' : objective,
+                                        objective.isEmpty
+                                            ? '목표를 설정해주세요'
+                                            : objective,
                                         style: TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w500,
-                                          color: objective.isEmpty ? Colors.grey.shade400 : Colors.black,
+                                          color:
+                                              objective.isEmpty
+                                                  ? Colors.grey.shade400
+                                                  : Colors.black,
                                         ),
                                       );
                                     },
@@ -291,9 +312,9 @@ class _TodoScreenState extends ConsumerState<TodoScreen> with TickerProviderStat
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: AppColors.primary,
-            ),
+            colorScheme: Theme.of(
+              context,
+            ).colorScheme.copyWith(primary: AppColors.primary),
           ),
           child: child!,
         );
@@ -332,7 +353,10 @@ class _TodoScreenState extends ConsumerState<TodoScreen> with TickerProviderStat
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: _viewIndex == 0 ? AppColors.primary.withOpacity(0.2) : Colors.grey.shade100,
+              color:
+                  _viewIndex == 0
+                      ? AppColors.primary.withOpacity(0.2)
+                      : Colors.grey.shade100,
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -352,7 +376,10 @@ class _TodoScreenState extends ConsumerState<TodoScreen> with TickerProviderStat
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: _viewIndex == 1 ? AppColors.primary.withOpacity(0.2) : Colors.grey.shade100,
+              color:
+                  _viewIndex == 1
+                      ? AppColors.primary.withOpacity(0.2)
+                      : Colors.grey.shade100,
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -381,18 +408,23 @@ class _TodoScreenState extends ConsumerState<TodoScreen> with TickerProviderStat
 
   // 목표 수정 다이얼로그
   void _showObjectiveEditDialog() async {
-    final currentObjective = ref.read(dailyObjectiveProvider.notifier).getObjective(_selectedDate);
+    final currentObjective = ref
+        .read(dailyObjectiveProvider.notifier)
+        .getObjective(_selectedDate);
 
     final result = await showDialog<String>(
       context: context,
-      builder: (context) => _ObjectiveEditDialog(
-        initialText: currentObjective,
-        selectedDate: _selectedDate,
-      ),
+      builder:
+          (context) => _ObjectiveEditDialog(
+            initialText: currentObjective,
+            selectedDate: _selectedDate,
+          ),
     );
 
     if (result != null) {
-      await ref.read(dailyObjectiveProvider.notifier).setObjective(_selectedDate, result);
+      await ref
+          .read(dailyObjectiveProvider.notifier)
+          .setObjective(_selectedDate, result);
     }
   }
 }
@@ -429,9 +461,7 @@ class _ObjectiveEditDialogState extends State<_ObjectiveEditDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
         constraints: BoxConstraints(
           maxWidth: MediaQuery.of(context).size.width * 0.9,
@@ -479,7 +509,10 @@ class _ObjectiveEditDialogState extends State<_ObjectiveEditDialog> {
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFE5E7EB),
                         borderRadius: BorderRadius.circular(25),
@@ -495,9 +528,13 @@ class _ObjectiveEditDialogState extends State<_ObjectiveEditDialog> {
                     ),
                   ),
                   GestureDetector(
-                    onTap: () => Navigator.of(context).pop(_textController.text),
+                    onTap:
+                        () => Navigator.of(context).pop(_textController.text),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primary,
                         borderRadius: BorderRadius.circular(25),

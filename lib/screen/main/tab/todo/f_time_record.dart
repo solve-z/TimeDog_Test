@@ -11,6 +11,8 @@ class TimeRecordFragment extends StatefulWidget {
 }
 
 class _TimeRecordFragmentState extends State<TimeRecordFragment> {
+  String? _selectedCategory; // 선택된 카테고리 (null이면 전체 표시)
+
   final List<String> timeSlots = [
     '6',
     '7',
@@ -40,18 +42,24 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
 
   String _getTimeLabel(int index) {
     final time = timeSlots[index];
-    if (index == 0) return '🌅$time'; // 아침 6시 (일출 아이콘)
-    if (index == 6) return '☀️$time'; // 정오 12시 (해 아이콘)
-    if (index == 12) return '🌇$time'; // 저녁 6시 (일몰 아이콘)
-    if (index == 18) return '🌠$time'; // 자정 12시 (별똥별 아이콘, 다음날 시작)
+    if (index == 6) return '🌞$time'; // 정오 12시
+    if (index == 18) return '🌙$time'; // 자정 12시
     return time;
+  }
+
+  // 텍스트를 세로로 배치하기 위해 각 글자 사이에 개행 추가
+  String _formatVerticalText(String text) {
+    return text.split('').join('\n');
   }
 
   @override
   Widget build(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [_buildCategoryList(), Expanded(child: _buildTimeGrid())],
+      children: [
+        _buildCategoryList(),
+        Expanded(child: _buildTimeGrid()),
+      ],
     );
   }
 
@@ -67,8 +75,8 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
     }
 
     return SizedBox(
-      width: 80,
-      child: Column(
+      width: 30,
+      child: ListView(
         children: [
           const SizedBox(height: 8),
           ...grouped.entries.map((entry) {
@@ -77,46 +85,71 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
             Color categoryColor = todos.first.color;
             Color accentColor = todos.first.accentColor;
 
-            return Container(
-              height: 36,
-              margin: const EdgeInsets.symmetric(vertical: 5),
-              decoration: BoxDecoration(
-                color: categoryColor.withOpacity(0.1),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(8),
-                  bottomLeft: Radius.circular(8),
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  // 같은 카테고리를 다시 클릭하면 전체 보기로 변경
+                  if (_selectedCategory == categoryName) {
+                    _selectedCategory = null;
+                  } else {
+                    _selectedCategory = categoryName;
+                  }
+                });
+              },
+              child: Container(
+                height: 80,
+                margin: const EdgeInsets.symmetric(vertical: 5),
+                decoration: BoxDecoration(
+                  color: _selectedCategory == categoryName
+                    ? categoryColor.withOpacity(0.7)  // 선택된 카테고리는 더 진한 색
+                    : categoryColor.withOpacity(0.1),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(8),
+                    bottomLeft: Radius.circular(8),
+                  ),
                 ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 16,
-                    height: double.infinity,
-                    decoration: BoxDecoration(
-                      color: accentColor,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(8),
-                        bottomLeft: Radius.circular(8),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        categoryName,
-                        style: const TextStyle(
-                          color: Color(0xFF303030),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
+                child: Column(
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: accentColor,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(8),
+                          topRight: Radius.circular(8),
                         ),
-                        textAlign: TextAlign.center,
                       ),
                     ),
-                  ),
-                ],
+                    Expanded(
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                          child: Text(
+                            _formatVerticalText(categoryName),
+                            style: TextStyle(
+                              color: _selectedCategory == categoryName
+                                ? Colors.black
+                                : const Color(0xFF303030),
+                              fontSize: 10,
+                              fontWeight: _selectedCategory == categoryName
+                                ? FontWeight.w600
+                                : FontWeight.w500,
+                              height: 1.2,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 10,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           }),
+          const SizedBox(height: 8),
         ],
       ),
     );
@@ -160,7 +193,7 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
       child: Row(
         children: [
           Container(
-            width: 38,
+            width: 42,
             decoration: BoxDecoration(
               border: Border(
                 top: BorderSide(color: const Color(0xFF656565), width: 1),
@@ -188,23 +221,30 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
           ...List.generate(6, (dayIndex) {
             final progressData = _getCellProgressData(timeIndex, dayIndex);
             return Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300, width: 0.5),
-                ),
-                child:
-                    progressData != null
-                        ? Align(
-                          alignment: Alignment.centerLeft,
-                          child: FractionallySizedBox(
-                            widthFactor: progressData.progress,
-                            child: Container(
-                              height: double.infinity,
-                              color: progressData.color,
+              child: GestureDetector(
+                onTap: () {
+                  if (progressData != null && progressData.todo != null && progressData.focusRecord != null) {
+                    _showFocusRecordDialog(progressData.todo!, progressData.focusRecord!);
+                  }
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300, width: 0.5),
+                  ),
+                  child:
+                      progressData != null
+                          ? Align(
+                            alignment: Alignment.centerLeft,
+                            child: FractionallySizedBox(
+                              widthFactor: progressData.progress,
+                              child: Container(
+                                height: double.infinity,
+                                color: progressData.color,
+                              ),
                             ),
-                          ),
-                        )
-                        : null,
+                          )
+                          : null,
+                ),
               ),
             );
           }),
@@ -216,20 +256,36 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
   CellProgressData? _getCellProgressData(int timeIndex, int columnIndex) {
     double maxProgress = 0.0;
     Color? resultColor;
+    TodoItemVo? selectedTodo;
+    FocusTimeRecord? selectedRecord;
 
     // 해당 시간 슬롯과 10분 단위에서 집중 진행률 계산
     for (final todo in widget.todos) {
+      // 카테고리 필터링: 선택된 카테고리가 있으면 해당 카테고리만 표시
+      final todoCategory = todo.category ?? '기타';
+      if (_selectedCategory != null && _selectedCategory != todoCategory) {
+        continue; // 선택된 카테고리가 아니면 건너뛰기
+      }
+
       for (final record in todo.focusTimeRecords) {
         final progress = _calculateProgress(record, timeIndex, columnIndex);
+
         if (progress > maxProgress) {
           maxProgress = progress;
-          resultColor = todo.color.withOpacity(0.3);
+          resultColor = todo.color.withOpacity(0.7);
+          selectedTodo = todo;
+          selectedRecord = record;
         }
       }
     }
 
-    if (maxProgress > 0 && resultColor != null) {
-      return CellProgressData(progress: maxProgress, color: resultColor);
+    if (maxProgress > 0 && resultColor != null && selectedTodo != null && selectedRecord != null) {
+      return CellProgressData(
+        progress: maxProgress,
+        color: resultColor,
+        todo: selectedTodo,
+        focusRecord: selectedRecord
+      );
     }
     return null;
   }
@@ -243,7 +299,16 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
     if (targetHour == -1) return 0.0;
 
     final targetMinute = columnIndex * 10; // 0, 10, 20, 30, 40, 50
-    final slotStart = DateTime(2025, 9, 19, targetHour, targetMinute);
+
+    // 실제 기록의 날짜를 기준으로 슬롯 시간 계산
+    final recordDate = record.startTime;
+    final slotStart = DateTime(
+      recordDate.year,
+      recordDate.month,
+      recordDate.day,
+      targetHour,
+      targetMinute,
+    );
     final slotEnd = slotStart.add(Duration(minutes: 10));
 
     // 집중 시간과 슬롯의 겹치는 부분 계산
@@ -252,7 +317,7 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
 
     if (overlapStart.isBefore(overlapEnd)) {
       final overlapMinutes = overlapEnd.difference(overlapStart).inMinutes;
-      return (overlapMinutes / 10.0).clamp(0.0, 1.0); // 10분 기준으로 진행률 계산
+      return (overlapMinutes / 10.0).clamp(0.0, 1.0);
     }
 
     return 0.0;
@@ -263,8 +328,8 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
 
   int _getHourFromIndex(int index) {
     // 인덱스를 실제 시간으로 변환 (6AM~다음날 5AM)
-    // 6,7,8,9,10,11,12,1,2,3,4,5,6,7,8,9,10,11,12,1,2,3,4,5
-    // 6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,0,1,2,3,4,5
+    // timeSlots: ['6','7','8','9','10','11','12','1','2','3','4','5','6','7','8','9','10','11','12','1','2','3','4','5']
+    // 실제 시간: [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,0,1,2,3,4,5]
 
     if (index >= 0 && index < 6) {
       // 6,7,8,9,10,11 AM
@@ -277,15 +342,146 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
       return index + 6; // 18~23
     } else if (index >= 18 && index < 24) {
       // 12,1,2,3,4,5 AM 다음날 (자정~새벽5시)
-      return index == 18 ? 0 : index - 18; // 12시는 0(자정), 1~5는 1~5
+      return index == 18 ? 0 : index - 17; // 12시는 0(자정), 1~5는 1~5
     }
     return -1;
+  }
+
+  // 집중 기록 정보를 보여주는 다이얼로그
+  void _showFocusRecordDialog(TodoItemVo todo, FocusTimeRecord record) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text(
+          '집중 기록 정보',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: todo.accentColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '할일: ${todo.title}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '카테고리: ${todo.category ?? "기타"}',
+              style: const TextStyle(fontSize: 14, color: Colors.black54),
+            ),
+            const SizedBox(height: 8),
+            if (todo.description != null && todo.description!.isNotEmpty) ...[
+              Text(
+                '설명: ${todo.description}',
+                style: const TextStyle(fontSize: 14, color: Colors.black54),
+              ),
+              const SizedBox(height: 8),
+            ],
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    '집중 시간: ${record.formattedDuration}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${_formatTime(record.startTime)} ~ ${_formatTime(record.endTime)}',
+                    style: const TextStyle(fontSize: 14, color: Colors.black54),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '집중 유형: ${record.focusType == FocusType.pomodoro ? "포모도로" : "스톱워치"}',
+              style: const TextStyle(fontSize: 14, color: Colors.black54),
+            ),
+          ],
+        ),
+        actions: [
+          Center(
+            child: Container(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey.shade200,
+                  foregroundColor: Colors.black87,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  '닫기',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 시간 포맷팅 헬퍼 함수
+  String _formatTime(DateTime time) {
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
   }
 }
 
 class CellProgressData {
   final double progress; // 0.0 ~ 1.0
   final Color color;
+  final TodoItemVo? todo;
+  final FocusTimeRecord? focusRecord;
 
-  CellProgressData({required this.progress, required this.color});
+  CellProgressData({
+    required this.progress,
+    required this.color,
+    this.todo,
+    this.focusRecord,
+  });
 }

@@ -1262,16 +1262,19 @@ class TimerScreen extends ConsumerWidget {
   }
 
   List<TodoItemVo> _getFilteredTodos(List<TodoItemVo> todos, String filter) {
+    // 먼저 완료되지 않은 할일들만 필터링
+    final incompleteTodos = todos.where((todo) => !todo.isCompleted).toList();
+
     switch (filter) {
       case '오늘':
-        return todos.where((todo) => _isToday(todo.scheduledDate)).toList();
+        return incompleteTodos.where((todo) => _isToday(todo.scheduledDate)).toList();
       case '내일':
-        return todos.where((todo) => _isTomorrow(todo.scheduledDate)).toList();
+        return incompleteTodos.where((todo) => _isTomorrow(todo.scheduledDate)).toList();
       case '이번 주':
-        return todos.where((todo) => _isThisWeek(todo.scheduledDate)).toList();
+        return incompleteTodos.where((todo) => _isThisWeek(todo.scheduledDate)).toList();
       default:
         // 카테고리 필터
-        return todos.where((todo) => todo.category == filter).toList();
+        return incompleteTodos.where((todo) => todo.category == filter).toList();
     }
   }
 

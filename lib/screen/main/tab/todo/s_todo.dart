@@ -113,6 +113,7 @@ class _TodoScreenState extends ConsumerState<TodoScreen> {
                             final totalMinutes = filteredTodos.fold(0, (sum, todo) => sum + todo.totalFocusTimeInMinutes);
                             final totalTime = _formatTotalTime(totalMinutes);
 
+
                             return Text(
                               totalTime,
                               style: const TextStyle(

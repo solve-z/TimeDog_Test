@@ -5,14 +5,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'vo/vo_timer.dart';
 import 'notification_service.dart';
+import '../todo/todo_provider.dart';
+import '../todo/vo/vo_todo_item.dart';
 
 class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserver {
-  TimerNotifier() : super(const TimerState()) {
+  TimerNotifier(this._ref) : super(const TimerState()) {
     _initializeState();
     _initializeNotifications();
     WidgetsBinding.instance.addObserver(this);
   }
 
+  final Ref _ref;
   Timer? _timer;
   DateTime? _targetEndTime;
   final NotificationService _notificationService = NotificationService();
@@ -235,9 +238,10 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
       // 새로운 타이머 시작 또는 일시정지에서 재개
       _targetEndTime = now.add(state.currentTime);
 
+      // 일시정지에서 재개하는 경우 startTime을 현재 시간으로 새로 설정
       state = state.copyWith(
         status: TimerStatus.running,
-        startTime: now,
+        startTime: now,  // 항상 현재 시간으로 설정
         endTime: _targetEndTime,
       );
     }
@@ -274,6 +278,39 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
   void pause() async {
     if (state.status != TimerStatus.running) return;
 
+    final pauseTime = DateTime.now();
+
+    // 일시정지할 때 집중시간 기록 (뽀모도로는 집중 시간만, 스톱워치는 항상)
+    if (state.startTime != null) {
+      final todoNotifier = _ref.read(todoProvider.notifier);
+      final todoState = _ref.read(todoProvider);
+      if (todoState.selectedTodo != null) {
+        bool shouldRecord = false;
+        FocusType focusType = FocusType.pomodoro;
+
+        if (state.mode == TimerMode.stopwatch) {
+          shouldRecord = true;
+          focusType = FocusType.stopwatch;
+        } else {
+          // 뽀모도로 모드에서는 집중 시간일 때만 기록
+          if (state.round == PomodoroRound.focus) {
+            shouldRecord = true;
+            focusType = FocusType.pomodoro;
+          }
+        }
+
+        if (shouldRecord) {
+          final focusRecord = FocusTimeRecord(
+            id: 'focus_${DateTime.now().millisecondsSinceEpoch}',
+            startTime: state.startTime!,
+            endTime: pauseTime,
+            focusType: focusType,
+          );
+          await todoNotifier.addFocusTimeToSelectedTodo(focusRecord);
+        }
+      }
+    }
+
     // 완전히 타이머 정지
     _stopTimer();
 
@@ -291,9 +328,13 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
       state = state.copyWith(
         status: TimerStatus.paused,
         currentTime: remainingTime,
+        endTime: pauseTime,
       );
     } else {
-      state = state.copyWith(status: TimerStatus.paused);
+      state = state.copyWith(
+        status: TimerStatus.paused,
+        endTime: pauseTime,
+      );
     }
 
     // 타이머 상태 완전히 초기화
@@ -313,6 +354,39 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
   }
 
   void stop() async {
+    final stopTime = DateTime.now();
+
+    // 실행 중일 때 중지하면 집중시간 기록 (휴식 시간 제외)
+    if (state.status == TimerStatus.running && state.startTime != null) {
+      final todoNotifier = _ref.read(todoProvider.notifier);
+      final todoState = _ref.read(todoProvider);
+      if (todoState.selectedTodo != null) {
+        bool shouldRecord = false;
+        FocusType focusType = FocusType.pomodoro;
+
+        if (state.mode == TimerMode.stopwatch) {
+          shouldRecord = true;
+          focusType = FocusType.stopwatch;
+        } else {
+          // 뽀모도로 모드에서는 집중 시간일 때만 기록 (휴식 시간은 제외)
+          if (state.round == PomodoroRound.focus) {
+            shouldRecord = true;
+            focusType = FocusType.pomodoro;
+          }
+        }
+
+        if (shouldRecord) {
+          final focusRecord = FocusTimeRecord(
+            id: 'focus_${DateTime.now().millisecondsSinceEpoch}',
+            startTime: state.startTime!,
+            endTime: stopTime,
+            focusType: focusType,
+          );
+          await todoNotifier.addFocusTimeToSelectedTodo(focusRecord);
+        }
+      }
+    }
+
     _stopTimer();
     _targetEndTime = null;
 
@@ -418,6 +492,20 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
         title: '집중 시간 완료!',
         message: '휴식 시간으로 전환합니다. 시작 버튼을 눌러주세요.',
       );
+
+      // 집중 시간 기록 추가 (선택된 할일이 있는 경우에만)
+      final todoNotifier = _ref.read(todoProvider.notifier);
+      final todoState = _ref.read(todoProvider);
+      if (todoState.selectedTodo != null && state.startTime != null) {
+        final focusRecord = FocusTimeRecord(
+          id: 'focus_${DateTime.now().millisecondsSinceEpoch}',
+          startTime: state.startTime!,
+          endTime: endTime,
+          focusType: FocusType.pomodoro,
+        );
+        await todoNotifier.addFocusTimeToSelectedTodo(focusRecord);
+        
+      }
 
       final isLongBreak = state.currentRound == state.settings.totalRounds;
       final nextRound =
@@ -617,5 +705,5 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
 }
 
 final timerProvider = StateNotifierProvider<TimerNotifier, TimerState>((ref) {
-  return TimerNotifier();
+  return TimerNotifier(ref);
 });

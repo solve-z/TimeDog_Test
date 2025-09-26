@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../constant/app_constants.dart';
+import '../../screen/main/tab/todo/s_todo_list.dart';
 
 class AppBarActionsWidget extends StatelessWidget {
   const AppBarActionsWidget({super.key});
@@ -18,7 +19,13 @@ class AppBarActionsWidget extends StatelessWidget {
         _AppBarIconButtonWidget(
           iconPath: AssetPaths.listIcon,
           tooltip: '할일리스트',
-          onPressed: () {},
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const TodoListScreen(),
+              ),
+            );
+          },
         ),
         _AppBarIconButtonWidget(
           iconPath: AssetPaths.plusIcon,

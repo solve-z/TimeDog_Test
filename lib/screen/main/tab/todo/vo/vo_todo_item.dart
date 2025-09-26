@@ -11,6 +11,7 @@ class TodoItemVo {
   final DateTime createdAt;
   final DateTime updatedAt;
   bool isCompleted;
+  final DateTime? completedAt;
   final List<FocusTimeRecord> focusTimeRecords;
 
   TodoItemVo({
@@ -24,6 +25,7 @@ class TodoItemVo {
     required this.createdAt,
     required this.updatedAt,
     this.isCompleted = false,
+    this.completedAt,
     this.focusTimeRecords = const [],
   });
 
@@ -44,6 +46,7 @@ class TodoItemVo {
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isCompleted,
+    DateTime? completedAt,
     List<FocusTimeRecord>? focusTimeRecords,
   }) {
     return TodoItemVo(
@@ -57,6 +60,7 @@ class TodoItemVo {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
       isCompleted: isCompleted ?? this.isCompleted,
+      completedAt: completedAt ?? this.completedAt,
       focusTimeRecords: focusTimeRecords ?? this.focusTimeRecords,
     );
   }
@@ -82,6 +86,7 @@ class TodoItemVo {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'isCompleted': isCompleted,
+      'completedAt': completedAt?.toIso8601String(),
       'focusTimeRecords': focusTimeRecords.map((record) => record.toJson()).toList(),
     };
   }
@@ -99,6 +104,7 @@ class TodoItemVo {
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
       isCompleted: json['isCompleted'],
+      completedAt: json['completedAt'] != null ? DateTime.parse(json['completedAt']) : null,
       focusTimeRecords: (json['focusTimeRecords'] as List)
           .map((record) => FocusTimeRecord.fromJson(record))
           .toList(),

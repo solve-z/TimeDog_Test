@@ -100,7 +100,11 @@ class TodoNotifier extends StateNotifier<TodoState> {
   Future<void> toggleTodoComplete(String todoId) async {
     final updatedTodos = state.allTodos.map((todo) {
       if (todo.id == todoId) {
-        return todo.copyWith(isCompleted: !todo.isCompleted);
+        final newIsCompleted = !todo.isCompleted;
+        return todo.copyWith(
+          isCompleted: newIsCompleted,
+          completedAt: newIsCompleted ? DateTime.now() : null,
+        );
       }
       return todo;
     }).toList();

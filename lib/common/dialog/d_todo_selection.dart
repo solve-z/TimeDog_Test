@@ -11,12 +11,13 @@ class TodoSelectionDialog extends ConsumerStatefulWidget {
   const TodoSelectionDialog({super.key});
 
   @override
-  ConsumerState<TodoSelectionDialog> createState() => _TodoSelectionDialogState();
+  ConsumerState<TodoSelectionDialog> createState() =>
+      _TodoSelectionDialogState();
 }
 
 class _TodoSelectionDialogState extends ConsumerState<TodoSelectionDialog> {
   bool showDateSelection = false;
-  String selectedDateFilter = '오늘';
+  String selectedDateFilter = '전체';
 
   @override
   Widget build(BuildContext context) {
@@ -94,7 +95,10 @@ class _TodoSelectionDialogState extends ConsumerState<TodoSelectionDialog> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () => showAddTodoDialog(context),
+                      onTap: () => showAddTodoDialog(
+                        context,
+                        selectedCategory: selectedDateFilter,
+                      ),
                       child: Container(
                         width: 40,
                         height: 40,
@@ -115,17 +119,21 @@ class _TodoSelectionDialogState extends ConsumerState<TodoSelectionDialog> {
 
               // 내용 영역 (날짜 선택 또는 할일 목록)
               Expanded(
-                child: showDateSelection
-                    ? _buildDateSelectionContent(
-                        selectedDateFilter,
-                        (filter) {
+                child:
+                    showDateSelection
+                        ? _buildDateSelectionContent(selectedDateFilter, (
+                          filter,
+                        ) {
                           setState(() {
                             selectedDateFilter = filter;
                             showDateSelection = false;
                           });
-                        },
-                      )
-                    : _buildFilteredTodoList(todoState, todoNotifier, selectedDateFilter),
+                        })
+                        : _buildFilteredTodoList(
+                          todoState,
+                          todoNotifier,
+                          selectedDateFilter,
+                        ),
               ),
 
               // 닫기 버튼
@@ -172,16 +180,18 @@ class _TodoSelectionDialogState extends ConsumerState<TodoSelectionDialog> {
     final categoryOrderNotifier = ref.read(categoryOrderProvider.notifier);
 
     final dateOptions = [
-      {'title': '오늘', 'icon': Icons.wb_sunny_outlined},
-      {'title': '내일', 'icon': Icons.wb_twilight_outlined},
-      {'title': '이번 주', 'icon': Icons.calendar_today_outlined},
+      {'title': '전체', 'icon': Icons.list_outlined},
     ];
 
     // 실제 할일에서 사용 중인 카테고리 추출
-    final extractedCategories = CategoryUtils.extractCategoriesFromTodos(todoState.allTodos);
+    final extractedCategories = CategoryUtils.extractCategoriesFromTodos(
+      todoState.allTodos,
+    );
 
     // 저장된 순서에 따라 카테고리 정렬
-    final categories = categoryOrderNotifier.sortCategoriesByOrder(extractedCategories);
+    final categories = categoryOrderNotifier.sortCategoriesByOrder(
+      extractedCategories,
+    );
 
     return SingleChildScrollView(
       child: Column(
@@ -195,7 +205,7 @@ class _TodoSelectionDialogState extends ConsumerState<TodoSelectionDialog> {
               isSelected,
               () => onFilterSelected(option['title'] as String),
             );
-          }).toList(),
+          }),
 
           // 카테고리 목록 (날짜 옵션 바로 아래 이어서)
           ...categories.map((category) {
@@ -206,7 +216,7 @@ class _TodoSelectionDialogState extends ConsumerState<TodoSelectionDialog> {
               isSelected,
               () => onFilterSelected(category['name'] as String),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -294,17 +304,19 @@ class _TodoSelectionDialogState extends ConsumerState<TodoSelectionDialog> {
     );
   }
 
-  Widget _buildFilteredTodoList(TodoState todoState, TodoNotifier todoNotifier, String filter) {
+  Widget _buildFilteredTodoList(
+    TodoState todoState,
+    TodoNotifier todoNotifier,
+    String filter,
+  ) {
     final filteredTodos = _getFilteredTodos(todoState.allTodos, filter);
 
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       itemCount: filteredTodos.length,
-      separatorBuilder: (context, index) => const Divider(
-        height: 1,
-        thickness: 1,
-        color: Color(0xFFE5E7EB),
-      ),
+      separatorBuilder:
+          (context, index) =>
+              const Divider(height: 1, thickness: 1, color: Color(0xFFE5E7EB)),
       itemBuilder: (context, index) {
         final todo = filteredTodos[index];
         final isSelected = todoState.selectedTodo?.id == todo.id;
@@ -340,7 +352,10 @@ class _TodoSelectionDialogState extends ConsumerState<TodoSelectionDialog> {
                   Navigator.of(context).pop();
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: isSelected ? todo.color : const Color(0xFFF3F4F6),
                     borderRadius: BorderRadius.circular(8),
@@ -351,7 +366,8 @@ class _TodoSelectionDialogState extends ConsumerState<TodoSelectionDialog> {
                       fontFamily: 'OmyuPretty',
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: isSelected ? Colors.white : const Color(0xFF6B7280),
+                      color:
+                          isSelected ? Colors.white : const Color(0xFF6B7280),
                     ),
                   ),
                 ),
@@ -365,36 +381,22 @@ class _TodoSelectionDialogState extends ConsumerState<TodoSelectionDialog> {
 
   List<TodoItemVo> _getFilteredTodos(List<TodoItemVo> todos, String filter) {
     final incompleteTodos = todos.where((todo) => !todo.isCompleted).toList();
+    final todayTodos =
+        incompleteTodos.where((todo) => _isToday(todo.scheduledDate)).toList();
 
     switch (filter) {
-      case '오늘':
-        return incompleteTodos.where((todo) => _isToday(todo.scheduledDate)).toList();
-      case '내일':
-        return incompleteTodos.where((todo) => _isTomorrow(todo.scheduledDate)).toList();
-      case '이번 주':
-        return incompleteTodos.where((todo) => _isThisWeek(todo.scheduledDate)).toList();
+      case '전체':
+        return todayTodos;
       default:
-        return incompleteTodos.where((todo) => todo.category == filter).toList();
+        return todayTodos.where((todo) => todo.category == filter).toList();
     }
   }
 
   bool _isToday(DateTime date) {
     final now = DateTime.now();
-    return date.year == now.year && date.month == now.month && date.day == now.day;
-  }
-
-  bool _isTomorrow(DateTime date) {
-    final tomorrow = DateTime.now().add(const Duration(days: 1));
-    return date.year == tomorrow.year && date.month == tomorrow.month && date.day == tomorrow.day;
-  }
-
-  bool _isThisWeek(DateTime date) {
-    final now = DateTime.now();
-    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-    final endOfWeek = startOfWeek.add(const Duration(days: 6));
-
-    return date.isAfter(startOfWeek.subtract(const Duration(days: 1))) &&
-           date.isBefore(endOfWeek.add(const Duration(days: 1)));
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
   }
 }
 

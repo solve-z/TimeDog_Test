@@ -4,15 +4,14 @@ import 'package:timedog_test/common/constant/app_constants.dart';
 import '../../screen/main/tab/todo/todo_provider.dart';
 import '../../screen/main/tab/todo/vo/vo_todo_item.dart';
 import '../../screen/main/tab/todo/category_order_provider.dart';
+import '../util/category_utils.dart';
 import 'd_category_selection.dart';
 
 class AddTodoDialog extends ConsumerStatefulWidget {
   final DateTime? selectedDate;
+  final String? selectedCategory;
 
-  const AddTodoDialog({
-    super.key,
-    this.selectedDate,
-  });
+  const AddTodoDialog({super.key, this.selectedDate, this.selectedCategory});
 
   @override
   ConsumerState<AddTodoDialog> createState() => _AddTodoDialogState();
@@ -27,6 +26,39 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
   void initState() {
     super.initState();
     titleController = TextEditingController();
+    _initializeCategory();
+  }
+
+  void _initializeCategory() {
+    final todoState = ref.read(todoProvider);
+    final categoryOrderNotifier = ref.read(categoryOrderProvider.notifier);
+
+    // 전달받은 카테고리가 있는 경우
+    if (widget.selectedCategory != null && widget.selectedCategory != '전체') {
+      selectedCategory = widget.selectedCategory!;
+      // 해당 카테고리의 색상을 찾아서 설정
+      try {
+        final todo = todoState.allTodos.firstWhere(
+          (todo) => todo.category == widget.selectedCategory,
+        );
+        selectedColor = todo.color;
+      } catch (e) {
+        // 해당 카테고리를 찾을 수 없는 경우 기본 색상 유지
+      }
+    } else {
+      // 전체이거나 카테고리가 없는 경우, 첫 번째 카테고리 사용
+      final extractedCategories = CategoryUtils.extractCategoriesFromTodos(
+        todoState.allTodos,
+      );
+      final sortedCategories = categoryOrderNotifier.sortCategoriesByOrder(
+        extractedCategories,
+      );
+
+      if (sortedCategories.isNotEmpty) {
+        selectedCategory = sortedCategories.first['name'] as String;
+        selectedColor = sortedCategories.first['color'] as Color;
+      }
+    }
   }
 
   @override
@@ -78,7 +110,7 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
                   color: Color(0xFF111827),
                 ),
                 decoration: InputDecoration(
-                  hintText: '할일 추가...',
+                  hintText: '할일 입력...',
                   hintStyle: const TextStyle(
                     fontFamily: 'OmyuPretty',
                     color: Color(0xFF9CA3AF),
@@ -94,31 +126,34 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
               children: [
                 // 카테고리 선택
                 Expanded(
-                  child: GestureDetector(
-                    onTap: () => _showCategorySelection(),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 12,
-                            height: 12,
-                            decoration: BoxDecoration(
-                              color: selectedColor,
-                              shape: BoxShape.circle,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _showCategorySelection(),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: selectedColor,
+                                shape: BoxShape.circle,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            selectedCategory,
-                            style: const TextStyle(
-                              fontFamily: 'OmyuPretty',
-                              fontSize: 16,
-                              color: Color(0xFF374151),
+                            const SizedBox(width: 8),
+                            Text(
+                              selectedCategory,
+                              style: const TextStyle(
+                                fontFamily: 'OmyuPretty',
+                                fontSize: 16,
+                                color: Color(0xFF374151),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -126,23 +161,26 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
 
                 // 완료 버튼
                 Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      if (titleController.text.trim().isNotEmpty) {
-                        _addNewTodo();
-                        Navigator.of(context).pop();
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      child: const Text(
-                        '완료',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: 'OmyuPretty',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF6366F1),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        if (titleController.text.trim().isNotEmpty) {
+                          _addNewTodo();
+                          Navigator.of(context).pop();
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                        child: const Text(
+                          '완료',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: 'OmyuPretty',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF6366F1),
+                          ),
                         ),
                       ),
                     ),
@@ -161,7 +199,9 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
   void _showCategorySelection() async {
     final result = await showDialog<Map<String, Color>>(
       context: context,
-      builder: (context) => CategorySelectionDialog(currentCategory: selectedCategory),
+      builder:
+          (context) =>
+              CategorySelectionDialog(currentCategory: selectedCategory),
     );
 
     if (result != null) {
@@ -197,11 +237,18 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
   }
 }
 
-void showAddTodoDialog(BuildContext context, {DateTime? selectedDate}) {
+void showAddTodoDialog(
+  BuildContext context, {
+  DateTime? selectedDate,
+  String? selectedCategory,
+}) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (context) => AddTodoDialog(selectedDate: selectedDate),
+    builder: (context) => AddTodoDialog(
+      selectedDate: selectedDate,
+      selectedCategory: selectedCategory,
+    ),
   );
 }

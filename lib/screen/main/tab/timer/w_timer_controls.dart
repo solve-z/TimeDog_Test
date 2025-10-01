@@ -17,33 +17,40 @@ class TimerControlsWidget extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildControlButton(
-            timerState.status == TimerStatus.running
-                ? 'assets/images/icons/pause.svg'
-                : 'assets/images/icons/play.svg',
-            () {
-              if (timerState.status == TimerStatus.running) {
-                timerNotifier.pause();
-              } else {
-                timerNotifier.start();
-              }
-            },
-            timerState.status == TimerStatus.running ? '일시정지' : '시작',
-          ),
-          const SizedBox(width: 30),
-          if (timerState.mode == TimerMode.pomodoro) ...[
+          // 초기상태(stopped): play만
+          if (timerState.status == TimerStatus.stopped) ...[
+            _buildControlButton(
+              'assets/images/icons/play.svg',
+              () => timerNotifier.start(),
+              '시작',
+            ),
+          ]
+          // 시작상태(running): pause만
+          else if (timerState.status == TimerStatus.running) ...[
+            _buildControlButton(
+              'assets/images/icons/pause.svg',
+              () => timerNotifier.pause(),
+              '일시정지',
+            ),
+          ]
+          // 일시정지상태(paused): play, rotate, x
+          else if (timerState.status == TimerStatus.paused) ...[
+            _buildControlButton(
+              'assets/images/icons/play.svg',
+              () => timerNotifier.start(),
+              '시작',
+            ),
+            _buildControlButton(
+              'assets/images/icons/rotate.svg',
+              () => timerNotifier.stop(),
+              '재시작',
+            ),
             _buildControlButton(
               'assets/images/icons/x.svg',
-              () => timerNotifier.stop(),
-              '중지',
+              () => timerNotifier.reset(),
+              '종료',
             ),
-            const SizedBox(width: 30),
           ],
-          _buildControlButton(
-            'assets/images/icons/rotate.svg',
-            () => timerNotifier.reset(),
-            '리셋',
-          ),
         ],
       ),
     );
@@ -54,9 +61,8 @@ class TimerControlsWidget extends ConsumerWidget {
     VoidCallback onPressed,
     String tooltip,
   ) {
-    return InkWell(
+    return GestureDetector(
       onTap: onPressed,
-      borderRadius: BorderRadius.circular(35),
       child: Container(
         width: 70,
         height: 70,
@@ -67,8 +73,8 @@ class TimerControlsWidget extends ConsumerWidget {
         child: Center(
           child: SvgPicture.asset(
             iconPath,
-            width: 32,
-            height: 32,
+            width: 38,
+            height: 38,
             colorFilter: const ColorFilter.mode(
               Color(0xFF666666),
               BlendMode.srcIn,

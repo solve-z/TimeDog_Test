@@ -18,28 +18,10 @@ class TimerDisplayWidget extends ConsumerWidget {
         // 타이머 표시 (모드, 타이머)
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
             children: [
-              // 왼쪽: 모드 선택
-              GestureDetector(
-                onTap: () => timerNotifier.toggleMode(),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  child: SvgPicture.asset(
-                    timerState.mode == TimerMode.pomodoro
-                        ? 'assets/images/icons/pomodoro.svg'
-                        : 'assets/images/icons/stopwatch.svg',
-                    width: 28,
-                    height: 28,
-                    colorFilter: const ColorFilter.mode(
-                      Color(0xFF6B7280),
-                      BlendMode.srcIn,
-                    ),
-                  ),
-                ),
-              ),
-
               // 중앙: 타이머 표시
               GestureDetector(
                 onTap: () {
@@ -48,20 +30,46 @@ class TimerDisplayWidget extends ConsumerWidget {
                     builder: (context) => const TimerSettingsDialog(),
                   );
                 },
-                child: Text(
-                  timerState.formattedTime,
-                  style: const TextStyle(
-                    fontFamily: 'OmyuPretty',
-                    fontSize: 64,
-                    fontWeight: FontWeight.w300,
-                    color: Color(0xFF6B7280),
-                    letterSpacing: 4,
-                  ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final screenWidth = MediaQuery.of(context).size.width;
+                    final fontSize = screenWidth > 600 ? 80.0 : 72.0;
+
+                    return Text(
+                      timerState.formattedTime,
+                      style: TextStyle(
+                        fontFamily: 'OmyuPretty',
+                        fontSize: fontSize,
+                        fontWeight: FontWeight.w300,
+                        color: const Color(0xFF6B7280),
+                        letterSpacing: 2,
+                      ),
+                    );
+                  },
                 ),
               ),
 
-              // 오른쪽: 빈 공간 (균형을 위한 Spacer)
-              const SizedBox(width: 52), // 모드 선택 버튼과 동일한 너비
+              // 왼쪽: 모드 선택
+              Positioned(
+                left: -60,
+                child: GestureDetector(
+                  onTap: () => timerNotifier.toggleMode(),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    child: SvgPicture.asset(
+                      timerState.mode == TimerMode.pomodoro
+                          ? 'assets/images/icons/pomodoro.svg'
+                          : 'assets/images/icons/stopwatch.svg',
+                      width: 28,
+                      height: 28,
+                      colorFilter: const ColorFilter.mode(
+                        Color(0xFF6B7280),
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),

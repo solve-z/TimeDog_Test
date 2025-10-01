@@ -13,22 +13,23 @@ class ProgressIndicatorWidget extends ConsumerWidget {
 
     // 포모도로 모드가 아니면 표시하지 않음
     if (timerState.mode != TimerMode.pomodoro) {
-      return const SizedBox.shrink();
+      return const SizedBox(width: 24, height: 24);
     }
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: timerState.roundProgress
-          .asMap()
-          .entries
-          .map(
-            (entry) => [
-              if (entry.key > 0) const SizedBox(width: 12),
-              _buildProgressCircle(entry.value),
-            ],
-          )
-          .expand((widgets) => widgets)
-          .toList(),
+      children:
+          timerState.roundProgress
+              .asMap()
+              .entries
+              .map(
+                (entry) => [
+                  if (entry.key > 0) const SizedBox(width: 12),
+                  _buildProgressCircle(entry.value),
+                ],
+              )
+              .expand((widgets) => widgets)
+              .toList(),
     );
   }
 
@@ -49,11 +50,7 @@ class ProgressIndicatorWidget extends ConsumerWidget {
     return SizedBox(
       width: 24,
       height: 24,
-      child: SvgPicture.asset(
-        iconPath,
-        width: 24,
-        height: 24,
-      ),
+      child: SvgPicture.asset(iconPath, width: 24, height: 24),
     );
   }
 }

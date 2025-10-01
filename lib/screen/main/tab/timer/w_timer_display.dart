@@ -13,15 +13,35 @@ class TimerDisplayWidget extends ConsumerWidget {
     final timerState = ref.watch(timerProvider);
     final timerNotifier = ref.read(timerProvider.notifier);
 
-    return Column(
-      children: [
-        // 타이머 표시 (모드, 타이머)
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.center,
+    return SizedBox(
+      width: double.infinity,
+      child: Column(
+        children: [
+          // 타이머 표시 (모드, 타이머)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // 왼쪽: 모드 선택
+              GestureDetector(
+                onTap: () => timerNotifier.toggleMode(),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  child: SvgPicture.asset(
+                    timerState.mode == TimerMode.pomodoro
+                        ? 'assets/images/icons/pomodoro.svg'
+                        : 'assets/images/icons/stopwatch.svg',
+                    width: 28,
+                    height: 28,
+                    colorFilter: const ColorFilter.mode(
+                      Color(0xFF6B7280),
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
               // 중앙: 타이머 표시
               GestureDetector(
                 onTap: () {
@@ -33,103 +53,68 @@ class TimerDisplayWidget extends ConsumerWidget {
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final screenWidth = MediaQuery.of(context).size.width;
-                    final fontSize = screenWidth > 600 ? 80.0 : 72.0;
+                    final fontSize = screenWidth > 600 ? 90.0 : 80.0;
+                    final charWidth = screenWidth > 600 ? 50.0 : 38.0;
+                    final spacing = screenWidth > 600 ? 8.0 : 5.0;
 
-                    return Text(
-                      timerState.formattedTime,
-                      style: TextStyle(
-                        fontFamily: 'OmyuPretty',
-                        fontSize: fontSize,
-                        fontWeight: FontWeight.w300,
-                        color: const Color(0xFF6B7280),
-                        letterSpacing: 2,
-                      ),
+                    final chars = timerState.formattedTime
+                        .replaceAll(' ', '')
+                        .split('');
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (int i = 0; i < chars.length; i++) ...[
+                          SizedBox(
+                            width: charWidth,
+                            child: Text(
+                              chars[i],
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: 'OmyuPretty',
+                                fontSize: fontSize,
+                                fontWeight: FontWeight.w300,
+                                color: const Color(0xFF6B7280),
+                                letterSpacing: 0,
+                              ),
+                            ),
+                          ),
+                          if (i < chars.length - 1) SizedBox(width: spacing),
+                        ],
+                      ],
                     );
                   },
                 ),
               ),
 
-              // 왼쪽: 모드 선택
-              Positioned(
-                left: -60,
-                child: GestureDetector(
-                  onTap: () => timerNotifier.toggleMode(),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    child: SvgPicture.asset(
-                      timerState.mode == TimerMode.pomodoro
-                          ? 'assets/images/icons/pomodoro.svg'
-                          : 'assets/images/icons/stopwatch.svg',
-                      width: 28,
-                      height: 28,
-                      colorFilter: const ColorFilter.mode(
-                        Color(0xFF6B7280),
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                  ),
+              const SizedBox(width: 12),
+
+              // 오른쪽: 빈 공간 (밸런스용 - 클릭하면 디버그 정보)
+              GestureDetector(
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder:
+                        (context) => _TimerDebugDialog(timerState: timerState),
+                  );
+                },
+                child: const SizedBox(
+                  width: 52, // 28 + (12 * 2) padding
+                  height: 52,
                 ),
               ),
             ],
           ),
-        ),
-
-        // 타이머 상태 정보
-        Stack(
-          children: [
-            Column(
-              children: [
-                const SizedBox(height: 10),
-                if (timerState.startTime != null &&
-                    timerState.status == TimerStatus.running)
-                  Text(
-                    '시작: ${_formatTime(timerState.startTime!)}',
-                    style: const TextStyle(
-                      fontFamily: 'OmyuPretty',
-                      fontSize: 12,
-                      color: Color(0xFF9CA3AF),
-                    ),
-                  ),
-                if (timerState.endTime != null &&
-                    timerState.status == TimerStatus.paused)
-                  Column(
-                    children: [
-                      if (timerState.startTime != null) ...[
-                        Text(
-                          '시작: ${_formatTime(timerState.startTime!)}',
-                          style: const TextStyle(
-                            fontFamily: 'OmyuPretty',
-                            fontSize: 12,
-                            color: Color(0xFF9CA3AF),
-                          ),
-                        ),
-                        Text(
-                          '종료: ${_formatTime(timerState.endTime!)}',
-                          style: const TextStyle(
-                            fontFamily: 'OmyuPretty',
-                            fontSize: 12,
-                            color: Color(0xFF9CA3AF),
-                          ),
-                        ),
-                        Text(
-                          '소요: ${_formatDuration(timerState.endTime!.difference(timerState.startTime!))}',
-                          style: const TextStyle(
-                            fontFamily: 'OmyuPretty',
-                            fontSize: 12,
-                            color: Color(0xFF059669),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ],
+        ],
+      ),
     );
   }
+}
+
+// 디버그 정보 모달
+class _TimerDebugDialog extends StatelessWidget {
+  final TimerState timerState;
+
+  const _TimerDebugDialog({required this.timerState});
 
   String _formatTime(DateTime dateTime) {
     final hour = dateTime.hour.toString().padLeft(2, '0');
@@ -142,5 +127,69 @@ class TimerDisplayWidget extends ConsumerWidget {
     final minutes = duration.inMinutes.toString().padLeft(2, '0');
     final seconds = (duration.inSeconds % 60).toString().padLeft(2, '0');
     return '$minutes:$seconds';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text(
+        'Timer Debug Info',
+        style: TextStyle(fontFamily: 'OmyuPretty', fontSize: 16),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (timerState.startTime != null) ...[
+            Text(
+              '시작: ${_formatTime(timerState.startTime!)}',
+              style: const TextStyle(
+                fontFamily: 'OmyuPretty',
+                fontSize: 14,
+                color: Color(0xFF374151),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          if (timerState.endTime != null) ...[
+            Text(
+              '종료: ${_formatTime(timerState.endTime!)}',
+              style: const TextStyle(
+                fontFamily: 'OmyuPretty',
+                fontSize: 14,
+                color: Color(0xFF374151),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          if (timerState.startTime != null && timerState.endTime != null) ...[
+            Text(
+              '소요: ${_formatDuration(timerState.endTime!.difference(timerState.startTime!))}',
+              style: const TextStyle(
+                fontFamily: 'OmyuPretty',
+                fontSize: 14,
+                color: Color(0xFF059669),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+          if (timerState.startTime == null && timerState.endTime == null)
+            const Text(
+              '타이머 정보 없음',
+              style: TextStyle(
+                fontFamily: 'OmyuPretty',
+                fontSize: 14,
+                color: Color(0xFF9CA3AF),
+              ),
+            ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('닫기', style: TextStyle(fontFamily: 'OmyuPretty')),
+        ),
+      ],
+    );
   }
 }

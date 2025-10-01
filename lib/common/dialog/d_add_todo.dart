@@ -167,7 +167,7 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
                       onTap: () {
                         if (titleController.text.trim().isNotEmpty) {
                           _addNewTodo();
-                          Navigator.of(context).pop();
+                          Navigator.of(context).pop(selectedCategory);
                         }
                       },
                       child: Container(
@@ -237,12 +237,12 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
   }
 }
 
-void showAddTodoDialog(
+Future<String?> showAddTodoDialog(
   BuildContext context, {
   DateTime? selectedDate,
   String? selectedCategory,
 }) {
-  showModalBottomSheet(
+  return showModalBottomSheet<String>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,

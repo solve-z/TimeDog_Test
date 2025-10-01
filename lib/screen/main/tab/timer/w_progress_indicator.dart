@@ -32,14 +32,25 @@ class ProgressIndicatorWidget extends ConsumerWidget {
     );
   }
 
-  Widget _buildProgressCircle(bool isCompleted) {
+  Widget _buildProgressCircle(RoundStatus status) {
+    String iconPath;
+    switch (status) {
+      case RoundStatus.notStarted:
+        iconPath = 'assets/images/icons/circle.svg';
+        break;
+      case RoundStatus.focusCompleted:
+        iconPath = 'assets/images/icons/roundRest.svg';
+        break;
+      case RoundStatus.breakCompleted:
+        iconPath = 'assets/images/icons/check_circle.svg';
+        break;
+    }
+
     return SizedBox(
       width: 24,
       height: 24,
       child: SvgPicture.asset(
-        isCompleted
-            ? 'assets/images/icons/check_circle.svg'
-            : 'assets/images/icons/circle.svg',
+        iconPath,
         width: 24,
         height: 24,
       ),

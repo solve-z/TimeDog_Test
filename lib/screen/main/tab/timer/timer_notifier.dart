@@ -233,6 +233,7 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
         round: PomodoroRound.focus,
         startTime: now,
         endTime: _targetEndTime,
+        roundStatusList: List.generate(state.settings.totalRounds, (_) => RoundStatus.notStarted),
       );
     } else {
       // 새로운 타이머 시작 또는 일시정지에서 재개
@@ -504,7 +505,15 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
           focusType: FocusType.pomodoro,
         );
         await todoNotifier.addFocusTimeToSelectedTodo(focusRecord);
-        
+
+      }
+
+      // roundStatusList 업데이트: 현재 라운드를 집중 완료로 표시
+      final updatedStatusList = List<RoundStatus>.from(state.roundStatusList.isEmpty
+          ? List.generate(state.settings.totalRounds, (_) => RoundStatus.notStarted)
+          : state.roundStatusList);
+      if ((state.currentRound - 1) < updatedStatusList.length) {
+        updatedStatusList[state.currentRound - 1] = RoundStatus.focusCompleted;
       }
 
       final isLongBreak = state.currentRound == state.settings.totalRounds;
@@ -521,6 +530,7 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
         endTime: endTime,
         startTime: null,
         completedRounds: state.currentRound, // 집중 시간 완료 시 라운드 완료 카운트
+        roundStatusList: updatedStatusList,
       );
 
       // 상태 저장
@@ -536,6 +546,14 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
           message: '다음 집중 시간으로 전환합니다. 시작 버튼을 눌러주세요.',
         );
 
+        // roundStatusList 업데이트: 현재 라운드를 휴식 완료로 표시
+        final updatedStatusList = List<RoundStatus>.from(state.roundStatusList.isEmpty
+            ? List.generate(state.settings.totalRounds, (_) => RoundStatus.notStarted)
+            : state.roundStatusList);
+        if ((state.currentRound - 1) < updatedStatusList.length) {
+          updatedStatusList[state.currentRound - 1] = RoundStatus.breakCompleted;
+        }
+
         state = state.copyWith(
           status: TimerStatus.paused,
           currentRound: state.currentRound + 1,
@@ -543,6 +561,7 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
           currentTime: state.settings.focusTime,
           endTime: endTime,
           startTime: null,
+          roundStatusList: updatedStatusList,
         );
 
         // 상태 저장
@@ -555,6 +574,14 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
           message: '모든 라운드를 완료했습니다!',
         );
 
+        // roundStatusList 업데이트: 마지막 라운드를 휴식 완료로 표시
+        final updatedStatusList = List<RoundStatus>.from(state.roundStatusList.isEmpty
+            ? List.generate(state.settings.totalRounds, (_) => RoundStatus.notStarted)
+            : state.roundStatusList);
+        if ((state.currentRound - 1) < updatedStatusList.length) {
+          updatedStatusList[state.currentRound - 1] = RoundStatus.breakCompleted;
+        }
+
         _stopTimer();
         state = TimerState(
           mode: TimerMode.pomodoro,
@@ -565,6 +592,7 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
           round: PomodoroRound.focus,
           endTime: endTime,
           completedRounds: state.settings.totalRounds, // 모든 라운드 완료 표시
+          roundStatusList: updatedStatusList,
         );
 
         // 상태 저장 (완료 상태로)

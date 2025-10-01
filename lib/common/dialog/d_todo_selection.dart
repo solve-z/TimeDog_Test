@@ -95,10 +95,19 @@ class _TodoSelectionDialogState extends ConsumerState<TodoSelectionDialog> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () => showAddTodoDialog(
-                        context,
-                        selectedCategory: selectedDateFilter,
-                      ),
+                      onTap: () async {
+                        final newCategory = await showAddTodoDialog(
+                          context,
+                          selectedCategory: selectedDateFilter,
+                        );
+
+                        // 필터가 전체가 아닌 경우, 추가된 할일의 카테고리로 필터 변경
+                        if (newCategory != null && selectedDateFilter != '전체') {
+                          setState(() {
+                            selectedDateFilter = newCategory;
+                          });
+                        }
+                      },
                       child: Container(
                         width: 40,
                         height: 40,

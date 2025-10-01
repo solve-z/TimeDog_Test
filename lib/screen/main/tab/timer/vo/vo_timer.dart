@@ -4,6 +4,8 @@ enum TimerStatus { stopped, running, paused }
 
 enum PomodoroRound { focus, shortBreak, longBreak }
 
+enum RoundStatus { notStarted, focusCompleted, breakCompleted }
+
 class TimerSettings {
   final int totalRounds;
   final Duration focusTime;
@@ -60,6 +62,7 @@ class TimerState {
   final DateTime? startTime;
   final DateTime? endTime;
   final int completedRounds;
+  final List<RoundStatus> roundStatusList;
 
   const TimerState({
     this.mode = TimerMode.pomodoro,
@@ -71,6 +74,7 @@ class TimerState {
     this.startTime,
     this.endTime,
     this.completedRounds = 0,
+    this.roundStatusList = const [],
   });
 
   TimerState copyWith({
@@ -83,6 +87,7 @@ class TimerState {
     DateTime? startTime,
     DateTime? endTime,
     int? completedRounds,
+    List<RoundStatus>? roundStatusList,
     bool clearEndTime = false,
   }) {
     return TimerState(
@@ -95,6 +100,7 @@ class TimerState {
       startTime: startTime ?? this.startTime,
       endTime: clearEndTime ? null : (endTime ?? this.endTime),
       completedRounds: completedRounds ?? this.completedRounds,
+      roundStatusList: roundStatusList ?? this.roundStatusList,
     );
   }
 
@@ -119,8 +125,24 @@ class TimerState {
     return '$minutes : $seconds';
   }
 
-  List<bool> get roundProgress {
-    return List.generate(settings.totalRounds, (index) => index < completedRounds);
+  List<RoundStatus> get roundProgress {
+    // roundStatusList가 비어있으면 notStarted로 채움
+    if (roundStatusList.isEmpty) {
+      return List.generate(settings.totalRounds, (_) => RoundStatus.notStarted);
+    }
+
+    // totalRounds가 변경되었을 때 대응
+    if (roundStatusList.length < settings.totalRounds) {
+      return [
+        ...roundStatusList,
+        ...List.generate(
+          settings.totalRounds - roundStatusList.length,
+          (_) => RoundStatus.notStarted,
+        ),
+      ];
+    }
+
+    return roundStatusList.take(settings.totalRounds).toList();
   }
 
   Map<String, dynamic> toJson() {
@@ -133,11 +155,21 @@ class TimerState {
       'startTimeMillis': startTime?.millisecondsSinceEpoch,
       'endTimeMillis': endTime?.millisecondsSinceEpoch,
       'completedRounds': completedRounds,
+      'roundStatusList': roundStatusList.map((e) => e.name).toList(),
       'settings': settings.toJson(),
     };
   }
 
   factory TimerState.fromJson(Map<String, dynamic> json) {
+    final roundStatusListJson = json['roundStatusList'] as List<dynamic>?;
+    final roundStatusList = roundStatusListJson
+            ?.map((name) => RoundStatus.values.firstWhere(
+                  (e) => e.name == name,
+                  orElse: () => RoundStatus.notStarted,
+                ))
+            .toList() ??
+        [];
+
     return TimerState(
       mode: TimerMode.values.firstWhere((e) => e.name == json['mode'], orElse: () => TimerMode.pomodoro),
       status: TimerStatus.values.firstWhere((e) => e.name == json['status'], orElse: () => TimerStatus.stopped),
@@ -147,6 +179,7 @@ class TimerState {
       startTime: json['startTimeMillis'] != null ? DateTime.fromMillisecondsSinceEpoch(json['startTimeMillis']) : null,
       endTime: json['endTimeMillis'] != null ? DateTime.fromMillisecondsSinceEpoch(json['endTimeMillis']) : null,
       completedRounds: json['completedRounds'] ?? 0,
+      roundStatusList: roundStatusList,
       settings: TimerSettings.fromJson(json['settings'] ?? {}),
     );
   }

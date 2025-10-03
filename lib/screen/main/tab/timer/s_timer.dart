@@ -6,14 +6,12 @@ import 'f_character_animation.dart';
 import 'w_timer_display.dart';
 import 'w_timer_controls.dart';
 import 'w_progress_indicator.dart';
-import '../todo/todo_provider.dart';
-import '../../../../common/dialog/d_todo_selection.dart';
+import 'w_todo_selector.dart';
 
 class TimerScreen extends ConsumerWidget {
   const TimerScreen({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final todoState = ref.watch(todoProvider);
     final screenWidth = MediaQuery.of(context).size.width;
     final isTablet = screenWidth > 600;
 
@@ -22,84 +20,10 @@ class TimerScreen extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
-            const Spacer(flex: 1),
+            const Spacer(flex: 2),
 
             // 할일 선택 영역
-            Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: isTablet ? 700 : double.infinity,
-                ),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: isTablet ? 40 : 20),
-                  child: GestureDetector(
-                    onTap: () => showTodoSelectionDialog(context),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            todoState.selectedTodo?.color.withOpacity(0.1) ??
-                            const Color(0xFFF9FAFB),
-                        border: Border.all(
-                          color:
-                              todoState.selectedTodo?.color.withOpacity(0.3) ??
-                              const Color(0xFFE5E7EB),
-                          width: 1,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (todoState.selectedTodo != null) ...[
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: todoState.selectedTodo!.color,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                todoState.selectedTodo!.title,
-                                style: const TextStyle(
-                                  fontFamily: 'OmyuPretty',
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF374151),
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ] else ...[
-                            const Icon(
-                              Icons.add_circle_outline,
-                              size: 16,
-                              color: Color(0xFF9CA3AF),
-                            ),
-                            const SizedBox(width: 6),
-                            const Text(
-                              '할일 선택',
-                              style: TextStyle(
-                                fontFamily: 'OmyuPretty',
-                                fontSize: 13,
-                                color: Color(0xFF9CA3AF),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            const TodoSelectorWidget(),
             SizedBox(height: isTablet ? 24 : 20),
 
             // 타이머 표시 위젯 (전체 너비 사용)

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'timer_notifier.dart';
 import 'vo/vo_timer.dart';
-import 'd_timer_settings.dart';
+import 's_timer_settings.dart';
 
 class TimerDisplayWidget extends ConsumerWidget {
   const TimerDisplayWidget({super.key});
@@ -45,9 +45,11 @@ class TimerDisplayWidget extends ConsumerWidget {
               // 중앙: 타이머 표시
               GestureDetector(
                 onTap: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => const TimerSettingsDialog(),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const TimerSettingsScreen(),
+                    ),
                   );
                 },
                 child: LayoutBuilder(

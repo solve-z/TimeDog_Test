@@ -4,6 +4,7 @@ import 'timer_notifier.dart';
 import 'vo/vo_timer.dart';
 import 'd_animation_selection.dart';
 import 'animation_provider.dart';
+import '../../../../common/dialog/d_number_picker.dart';
 
 class TimerSettingsScreen extends ConsumerStatefulWidget {
   const TimerSettingsScreen({super.key});
@@ -134,9 +135,30 @@ class _TimerSettingsScreenState extends ConsumerState<TimerSettingsScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: _buildTimerBox('집중 시간', focusMinutes, '분', () {
-                        // TODO: 다이얼로그로 시간 선택
-                      }),
+                      child: _buildTimerBox(
+                        '집중 시간',
+                        focusMinutes,
+                        '분',
+                        () async {
+                          final result = await showDialog<int>(
+                            context: context,
+                            builder:
+                                (context) => NumberPickerDialog(
+                                  title: '집중 시간',
+                                  currentValue: focusMinutes,
+                                  minValue: 1,
+                                  maxValue: 60,
+                                  unit: '분',
+                                ),
+                          );
+                          if (result != null) {
+                            setState(() {
+                              focusMinutes = result;
+                            });
+                            _updateTimerSettings();
+                          }
+                        },
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -144,21 +166,74 @@ class _TimerSettingsScreenState extends ConsumerState<TimerSettingsScreen> {
                         '짧은 휴식',
                         shortBreakMinutes,
                         '분',
-                        () {
-                          // TODO: 다이얼로그로 시간 선택
+                        () async {
+                          final result = await showDialog<int>(
+                            context: context,
+                            builder:
+                                (context) => NumberPickerDialog(
+                                  title: '짧은 휴식 시간',
+                                  currentValue: shortBreakMinutes,
+                                  minValue: 1,
+                                  maxValue: 30,
+                                  unit: '분',
+                                ),
+                          );
+                          if (result != null) {
+                            setState(() {
+                              shortBreakMinutes = result;
+                            });
+                            _updateTimerSettings();
+                          }
                         },
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: _buildTimerBox('긴 휴식', longBreakMinutes, '분', () {
-                        // TODO: 다이얼로그로 시간 선택
-                      }),
+                      child: _buildTimerBox(
+                        '긴 휴식',
+                        longBreakMinutes,
+                        '분',
+                        () async {
+                          final result = await showDialog<int>(
+                            context: context,
+                            builder:
+                                (context) => NumberPickerDialog(
+                                  title: '긴 휴식 시간',
+                                  currentValue: longBreakMinutes,
+                                  minValue: 1,
+                                  maxValue: 60,
+                                  unit: '분',
+                                ),
+                          );
+                          if (result != null) {
+                            setState(() {
+                              longBreakMinutes = result;
+                            });
+                            _updateTimerSettings();
+                          }
+                        },
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: _buildTimerBox('라운드', totalRounds, '회', () {
-                        // TODO: 다이얼로그로 라운드 선택
+                      child: _buildTimerBox('라운드', totalRounds, '회', () async {
+                        final result = await showDialog<int>(
+                          context: context,
+                          builder:
+                              (context) => NumberPickerDialog(
+                                title: '라운드',
+                                currentValue: totalRounds,
+                                minValue: 1,
+                                maxValue: 10,
+                                unit: '회',
+                              ),
+                        );
+                        if (result != null) {
+                          setState(() {
+                            totalRounds = result;
+                          });
+                          _updateTimerSettings();
+                        }
                       }),
                     ),
                   ],
@@ -236,32 +311,6 @@ class _TimerSettingsScreenState extends ConsumerState<TimerSettingsScreen> {
                 const SizedBox(height: 16),
                 _buildMusicSelector(),
 
-                const SizedBox(height: 40),
-
-                // 저장 버튼
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _saveSettings,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD9B5FF),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      '저장',
-                      style: TextStyle(
-                        fontFamily: 'OmyuPretty',
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
                 const SizedBox(height: 24), // 하단 여백 추가
               ],
             ),
@@ -274,7 +323,9 @@ class _TimerSettingsScreenState extends ConsumerState<TimerSettingsScreen> {
   Widget _buildSectionTitle(String title) {
     return Container(
       padding: const EdgeInsets.only(bottom: 8),
+      width: double.infinity,
       decoration: const BoxDecoration(
+        color: Colors.white,
         border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB), width: 1)),
       ),
       child: Text(
@@ -298,10 +349,12 @@ class _TimerSettingsScreenState extends ConsumerState<TimerSettingsScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
         decoration: BoxDecoration(
-          color: const Color(0xFFF9FAFB),
+          // color: const Color(0xFFF9FAFB),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
         ),
         child: Column(
           children: [
@@ -314,13 +367,13 @@ class _TimerSettingsScreenState extends ConsumerState<TimerSettingsScreen> {
                 color: Color(0xFF9CA3AF),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(
               '$value$unit',
               style: const TextStyle(
                 fontFamily: 'OmyuPretty',
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
+                fontSize: 20,
+                fontWeight: FontWeight.w400,
                 color: Color(0xFF6B7280),
               ),
             ),
@@ -341,7 +394,8 @@ class _TimerSettingsScreenState extends ConsumerState<TimerSettingsScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: const Color(0xFFF9FAFB),
+          color: Colors.white,
+          // color: const Color(0xFFF9FAFB),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: const Color(0xFFE5E7EB)),
         ),
@@ -457,7 +511,7 @@ class _TimerSettingsScreenState extends ConsumerState<TimerSettingsScreen> {
     );
   }
 
-  void _saveSettings() {
+  void _updateTimerSettings() {
     final newSettings = TimerSettings(
       totalRounds: totalRounds,
       focusTime: Duration(minutes: focusMinutes),
@@ -466,6 +520,10 @@ class _TimerSettingsScreenState extends ConsumerState<TimerSettingsScreen> {
     );
 
     ref.read(timerProvider.notifier).updateSettings(newSettings);
+  }
+
+  void _saveSettings() {
+    _updateTimerSettings();
 
     // TODO: 애니메이션 및 음악 설정 저장
 

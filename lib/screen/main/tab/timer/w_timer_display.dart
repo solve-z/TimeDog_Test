@@ -55,7 +55,7 @@ class TimerDisplayWidget extends ConsumerWidget {
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final screenWidth = MediaQuery.of(context).size.width;
-                    final fontSize = screenWidth > 600 ? 90.0 : 80.0;
+                    final fontSize = screenWidth > 600 ? 80.0 : 70.0;
                     final charWidth = screenWidth > 600 ? 50.0 : 38.0;
                     final spacing = screenWidth > 600 ? 8.0 : 5.0;
 

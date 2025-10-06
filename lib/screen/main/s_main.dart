@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../common/widget/w_app_bar_actions.dart';
 import '../../common/widget/w_bottom_navigation.dart';
+import '../../common/widget/w_drawer_menu.dart';
 import 'tab/timer/s_timer.dart';
 import 'tab/todo/s_todo.dart';
 import 'tab/statistics/s_statistics.dart';
@@ -28,13 +30,32 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _currentIndex == 0 ? null : AppBar(
-        title: Text(
-          _tabTitles[_currentIndex],
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        actions: const [AppBarActionsWidget()],
-      ),
+      appBar: _currentIndex == 0
+          ? AppBar(
+              leading: Builder(
+                builder: (context) => Padding(
+                  padding: const EdgeInsets.only(left: 16.0),
+                  child: IconButton(
+                    icon: SvgPicture.asset(
+                      'assets/images/icons/drawer.svg',
+                      width: 24,
+                      height: 24,
+                    ),
+                    onPressed: () {
+                      Scaffold.of(context).openDrawer();
+                    },
+                  ),
+                ),
+              ),
+            )
+          : AppBar(
+              title: Text(
+                _tabTitles[_currentIndex],
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              actions: const [AppBarActionsWidget()],
+            ),
+      drawer: _currentIndex == 0 ? const DrawerMenuWidget() : null,
       body: _screens[_currentIndex],
       bottomNavigationBar: BottomNavigationWidget(
         currentIndex: _currentIndex,

@@ -15,7 +15,6 @@ class TimeDogApp extends ConsumerWidget {
     return MaterialApp(
       title: 'TimeDog',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.red),
         useMaterial3: true,
         scaffoldBackgroundColor: AppColors.scaffoldBackground,
         appBarTheme: const AppBarTheme(

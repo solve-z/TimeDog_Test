@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'timer_notifier.dart';
 import 'vo/vo_timer.dart';
 import 's_timer_settings.dart';
@@ -11,7 +10,6 @@ class TimerDisplayWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final timerState = ref.watch(timerProvider);
-    final timerNotifier = ref.read(timerProvider.notifier);
 
     return SizedBox(
       width: double.infinity,
@@ -21,22 +19,19 @@ class TimerDisplayWidget extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // 왼쪽: 모드 선택
+              // 왼쪽: 빈 공간 (밸런스용 - 클릭하면 디버그 정보)
               GestureDetector(
-                onTap: () => timerNotifier.toggleMode(),
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder:
+                        (context) => _TimerDebugDialog(timerState: timerState),
+                  );
+                },
                 child: Container(
-                  padding: const EdgeInsets.all(12),
-                  child: SvgPicture.asset(
-                    timerState.mode == TimerMode.pomodoro
-                        ? 'assets/images/icons/pomodoro.svg'
-                        : 'assets/images/icons/stopwatch.svg',
-                    width: 28,
-                    height: 28,
-                    colorFilter: const ColorFilter.mode(
-                      Color(0xFF6B7280),
-                      BlendMode.srcIn,
-                    ),
-                  ),
+                  width: 52, // 28 + (12 * 2) padding
+                  height: 52,
+                  color: Colors.transparent, // 클릭 영역 활성화
                 ),
               ),
 
@@ -99,9 +94,10 @@ class TimerDisplayWidget extends ConsumerWidget {
                         (context) => _TimerDebugDialog(timerState: timerState),
                   );
                 },
-                child: const SizedBox(
+                child: Container(
                   width: 52, // 28 + (12 * 2) padding
                   height: 52,
+                  color: Colors.transparent, // 클릭 영역 활성화
                 ),
               ),
             ],

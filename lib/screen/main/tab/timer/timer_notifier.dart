@@ -3,10 +3,13 @@ import 'dart:convert';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timedog_test/common/utils/app_logger.dart';
 import 'vo/vo_timer.dart';
 import 'notification_service.dart';
 import '../todo/todo_provider.dart';
 import '../todo/vo/vo_todo_item.dart';
+import 'music_player_service.dart';
+import 'music_provider.dart';
 
 class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserver {
   TimerNotifier(this._ref) : super(const TimerState()) {
@@ -272,12 +275,40 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
     _targetEndTime = actualNow.add(state.currentTime);
     state = state.copyWith(endTime: _targetEndTime);
 
+    AppLogger.timer.i('타이머 시작 - 현재 시간: ${state.currentTime.inSeconds}초');
+    AppLogger.timer.d('목표 종료 시간: ${_targetEndTime!.hour}:${_targetEndTime!.minute}:${_targetEndTime!.second}');
+    AppLogger.timer.d('라운드: ${state.round}, 상태: ${state.status}');
 
+    // 타이머 시작 (비디오 재생 시작)
     _startTimer();
+
+    // 비디오 재생 후 음악 재생 (비디오가 먼저 오디오 포커스를 가진 후 음악 재생)
+    await Future.delayed(const Duration(milliseconds: 500));
+    try {
+      final musicNotifier = _ref.read(musicProvider.notifier);
+      await musicNotifier.ensureLoaded();
+
+      final musicSelection = _ref.read(musicProvider);
+      final musicPlayerService = _ref.read(musicPlayerServiceProvider);
+      print('🎵 [타이머] 음악 재생 시도 - 음악 ID: ${musicSelection.musicId}');
+
+      if (musicSelection.musicId != 'none') {
+        await musicPlayerService.playMusic(musicSelection.musicId);
+        print('🎵 [타이머] 음악 재생 완료');
+      } else {
+        print('🎵 [타이머] 음악 선택 없음');
+      }
+    } catch (e) {
+      print('❌ [타이머] 음악 재생 실패: $e');
+    }
   }
 
   void pause() async {
     if (state.status != TimerStatus.running) return;
+
+    // 음악 일시정지
+    final musicPlayerService = _ref.read(musicPlayerServiceProvider);
+    await musicPlayerService.pauseMusic();
 
     final pauseTime = DateTime.now();
 
@@ -355,6 +386,10 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
   }
 
   void stop() async {
+    // 음악 정지
+    final musicPlayerService = _ref.read(musicPlayerServiceProvider);
+    await musicPlayerService.stopMusic();
+
     final stopTime = DateTime.now();
 
     // 실행 중일 때 중지하면 집중시간 기록 (휴식 시간 제외)
@@ -418,6 +453,10 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
   }
 
   void reset() async {
+    // 음악 정지
+    final musicPlayerService = _ref.read(musicPlayerServiceProvider);
+    await musicPlayerService.stopMusic();
+
     _stopTimer();
     _targetEndTime = null;
 
@@ -483,11 +522,30 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
   }
 
   void _handlePomodoroRoundComplete() async {
+    // 이미 완료 처리 중이면 중복 실행 방지
+    if (state.status != TimerStatus.running) {
+      AppLogger.timer.w('이미 완료 처리됨 - 중복 호출 방지');
+      return;
+    }
+
     final endTime = DateTime.now();
+
+    AppLogger.timer.i('========== 라운드 완료 처리 시작 ==========');
+    AppLogger.timer.i('완료된 라운드: ${state.round}');
+
+    // 타이머 즉시 정지 (중복 호출 방지)
+    _stopTimer();
+    _targetEndTime = null;
+
+    // 완료 사운드 재생 (내부에서 배경 음악 정지 처리)
+    final musicPlayerService = _ref.read(musicPlayerServiceProvider);
+
+    AppLogger.timer.d('완료 사운드 재생 요청...');
+    await musicPlayerService.playCompletionSound();
+    AppLogger.timer.d('완료 사운드 재생 요청 완료');
 
     if (state.round == PomodoroRound.focus) {
       // 집중 시간 완료 → 휴식으로 전환
-      _stopTimer(); // 타이머 정지
       await _notificationService.cancelRunningNotification(); // 실행 중 알림 취소
       await _notificationService.showTimerCompleteNotification(
         title: '집중 시간 완료!',
@@ -520,18 +578,24 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
       final nextRound =
           isLongBreak ? PomodoroRound.longBreak : PomodoroRound.shortBreak;
 
+      final nextTime = nextRound == PomodoroRound.longBreak
+          ? state.settings.longBreakTime
+          : state.settings.shortBreakTime;
+
+      AppLogger.timer.i('휴식 전환 - 다음 라운드: $nextRound');
+      AppLogger.timer.i('휴식 시간: ${nextTime.inSeconds}초');
+
       state = state.copyWith(
         status: TimerStatus.paused,
         round: nextRound,
-        currentTime:
-            nextRound == PomodoroRound.longBreak
-                ? state.settings.longBreakTime
-                : state.settings.shortBreakTime,
+        currentTime: nextTime,
         endTime: endTime,
         startTime: null,
         completedRounds: state.currentRound, // 집중 시간 완료 시 라운드 완료 카운트
         roundStatusList: updatedStatusList,
       );
+
+      AppLogger.timer.i('휴식 전환 완료 - 현재 시간: ${state.currentTime.inSeconds}초');
 
       // 상태 저장
       _saveState();
@@ -539,7 +603,6 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
       // 휴식 시간 완료
       if (state.currentRound < state.settings.totalRounds) {
         // 아직 더 해야할 라운드가 있음 → 다음 집중 시간으로
-        _stopTimer(); // 타이머 정지
         await _notificationService.cancelRunningNotification(); // 실행 중 알림 취소
         await _notificationService.showTimerCompleteNotification(
           title: '휴식 시간 완료!',
@@ -582,7 +645,6 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
           updatedStatusList[state.currentRound - 1] = RoundStatus.breakCompleted;
         }
 
-        _stopTimer();
         state = TimerState(
           mode: TimerMode.pomodoro,
           status: TimerStatus.stopped,

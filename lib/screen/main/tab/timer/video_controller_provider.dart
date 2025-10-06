@@ -37,21 +37,16 @@ class VideoControllerNotifier extends StateNotifier<VideoPlayerController?> {
       videoPath = animationSelection.getFocusVideoPath();
     }
 
-    print('📹 비디오 초기화: $videoPath');
     _loadVideo(videoPath);
   }
 
   void _loadVideo(String videoPath) {
-    print('🔍 비디오 체크: 현재=$_currentVideoPath, 요청=$videoPath');
-
-    if (_currentVideoPath == videoPath && state != null && state!.value.isInitialized) {
+    if (_currentVideoPath == videoPath &&
+        state != null &&
+        state!.value.isInitialized) {
       // 이미 같은 비디오가 로드되어 있으면 스킵
-      print('⏭️  이미 로드된 비디오: $videoPath');
       return;
     }
-
-    print('🔄 비디오 로드 시작: $videoPath');
-    print('   - 이전 비디오: $_currentVideoPath');
 
     // 기존 컨트롤러 정리
     final oldController = state;
@@ -65,16 +60,18 @@ class VideoControllerNotifier extends StateNotifier<VideoPlayerController?> {
     _currentVideoPath = videoPath;
     final controller = VideoPlayerController.asset(videoPath);
 
-    controller.initialize().then((_) {
-      if (mounted) {
-        controller.setLooping(true);
-        state = controller;
-        print('✅ 비디오 초기화 완료: $videoPath');
-      }
-    }).catchError((error) {
-      print('❌ 비디오 초기화 실패: $error');
-      _currentVideoPath = null;
-    });
+    controller
+        .initialize()
+        .then((_) {
+          if (mounted) {
+            controller.setLooping(true);
+            controller.setVolume(0.0); // 비디오 음소거 (음악과 충돌 방지)
+            state = controller;
+          }
+        })
+        .catchError((error) {
+          _currentVideoPath = null;
+        });
   }
 
   void updateVideo() {
@@ -88,22 +85,25 @@ class VideoControllerNotifier extends StateNotifier<VideoPlayerController?> {
   }
 }
 
-final videoControllerProvider = StateNotifierProvider<VideoControllerNotifier, VideoPlayerController?>((ref) {
-  final notifier = VideoControllerNotifier(ref);
+final videoControllerProvider =
+    StateNotifierProvider<VideoControllerNotifier, VideoPlayerController?>((
+      ref,
+    ) {
+      final notifier = VideoControllerNotifier(ref);
 
-  // 애니메이션 선택이 변경되면 비디오 업데이트
-  ref.listen(animationProvider, (previous, next) {
-    if (previous != next) {
-      notifier.updateVideo();
-    }
-  });
+      // 애니메이션 선택이 변경되면 비디오 업데이트
+      ref.listen(animationProvider, (previous, next) {
+        if (previous != next) {
+          notifier.updateVideo();
+        }
+      });
 
-  // 타이머 라운드가 변경되면 비디오 업데이트 (집중 <-> 휴식)
-  ref.listen(timerProvider, (previous, next) {
-    if (previous?.round != next.round || previous?.mode != next.mode) {
-      notifier.updateVideo();
-    }
-  });
+      // 타이머 라운드가 변경되면 비디오 업데이트 (집중 <-> 휴식)
+      ref.listen(timerProvider, (previous, next) {
+        if (previous?.round != next.round || previous?.mode != next.mode) {
+          notifier.updateVideo();
+        }
+      });
 
-  return notifier;
-});
+      return notifier;
+    });

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:timedog_test/common/constant/app_constants.dart';
 import '../../screen/main/tab/todo/todo_provider.dart';
 import '../../screen/main/tab/todo/category_order_provider.dart';
 import '../util/category_utils.dart';
@@ -8,16 +7,15 @@ import '../util/category_utils.dart';
 class CategorySelectionDialog extends ConsumerStatefulWidget {
   final String? currentCategory;
 
-  const CategorySelectionDialog({
-    super.key,
-    this.currentCategory,
-  });
+  const CategorySelectionDialog({super.key, this.currentCategory});
 
   @override
-  ConsumerState<CategorySelectionDialog> createState() => _CategorySelectionDialogState();
+  ConsumerState<CategorySelectionDialog> createState() =>
+      _CategorySelectionDialogState();
 }
 
-class _CategorySelectionDialogState extends ConsumerState<CategorySelectionDialog> {
+class _CategorySelectionDialogState
+    extends ConsumerState<CategorySelectionDialog> {
   @override
   Widget build(BuildContext context) {
     final todoState = ref.watch(todoProvider);
@@ -25,21 +23,20 @@ class _CategorySelectionDialogState extends ConsumerState<CategorySelectionDialo
     final categoryOrderNotifier = ref.read(categoryOrderProvider.notifier);
 
     // 실제 할일에서 사용 중인 카테고리 추출
-    final extractedCategories = CategoryUtils.extractCategoriesFromTodos(todoState.allTodos);
+    final extractedCategories = CategoryUtils.extractCategoriesFromTodos(
+      todoState.allTodos,
+    );
 
     // 저장된 순서에 따라 카테고리 정렬
-    final categories = categoryOrderNotifier.sortCategoriesByOrder(extractedCategories);
+    final categories = categoryOrderNotifier.sortCategoriesByOrder(
+      extractedCategories,
+    );
 
     return Dialog(
       backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
-        constraints: const BoxConstraints(
-          maxHeight: 400,
-          maxWidth: 350,
-        ),
+        constraints: const BoxConstraints(maxHeight: 400, maxWidth: 350),
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.all(Radius.circular(20)),
@@ -67,11 +64,13 @@ class _CategorySelectionDialogState extends ConsumerState<CategorySelectionDialo
                 child: Column(
                   children: [
                     ...categories.map((category) {
-                      final isSelected = widget.currentCategory == category['name'];
+                      final isSelected =
+                          widget.currentCategory == category['name'];
                       return GestureDetector(
                         onTap: () {
                           Navigator.of(context).pop({
-                            category['name'] as String: category['color'] as Color,
+                            category['name'] as String:
+                                category['color'] as Color,
                           });
                         },
                         child: Container(
@@ -128,7 +127,8 @@ class _CategorySelectionDialogState extends ConsumerState<CategorySelectionDialo
                         final result = await _showNewCategoryDialog();
                         if (result != null) {
                           // 새 카테고리를 순서에 추가
-                          await ref.read(categoryOrderProvider.notifier)
+                          await ref
+                              .read(categoryOrderProvider.notifier)
                               .addCategoryToOrder(result['name'] as String);
 
                           Navigator.of(context).pop({
@@ -142,9 +142,7 @@ class _CategorySelectionDialogState extends ConsumerState<CategorySelectionDialo
                           vertical: 16,
                           horizontal: 20,
                         ),
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                        ),
+                        decoration: const BoxDecoration(color: Colors.white),
                         child: const Row(
                           children: [
                             Icon(
@@ -172,10 +170,7 @@ class _CategorySelectionDialogState extends ConsumerState<CategorySelectionDialo
 
             // 하단 닫기 버튼 영역
             Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 12,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: GestureDetector(
                 onTap: () => Navigator.of(context).pop(),
                 child: Container(
@@ -207,173 +202,188 @@ class _CategorySelectionDialogState extends ConsumerState<CategorySelectionDialo
     return await showDialog<Map<String, dynamic>>(
       context: context,
       barrierColor: Colors.black87,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => Dialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          insetPadding: const EdgeInsets.all(16),
-          child: Container(
-            width: MediaQuery.of(context).size.width,
-            height: MediaQuery.of(context).size.height * 0.8,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.all(Radius.circular(20)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 헤더
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  child: const Text(
-                    '새 카테고리',
-                    style: TextStyle(
-                      fontFamily: 'OmyuPretty',
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF111827),
-                    ),
+      builder:
+          (context) => StatefulBuilder(
+            builder:
+                (context, setState) => Dialog(
+                  backgroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                ),
-
-                // 카테고리 이름 입력
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: TextField(
-                    controller: categoryController,
-                    autofocus: true,
-                    style: const TextStyle(
-                      fontFamily: 'OmyuPretty',
-                      fontSize: 16,
-                      color: Color(0xFF111827),
+                  insetPadding: const EdgeInsets.all(16),
+                  child: Container(
+                    width: MediaQuery.of(context).size.width,
+                    height: MediaQuery.of(context).size.height * 0.8,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.all(Radius.circular(20)),
                     ),
-                    decoration: InputDecoration(
-                      hintText: '카테고리 이름...',
-                      hintStyle: const TextStyle(
-                        fontFamily: 'OmyuPretty',
-                        color: Color(0xFF9CA3AF),
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // 색상 선택 영역
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    children: [
-                      // 색상 선택 헤더
-                      const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          '색상 선택',
-                          style: TextStyle(
-                            fontFamily: 'OmyuPretty',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF6B7280),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // 헤더
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          child: const Text(
+                            '새 카테고리',
+                            style: TextStyle(
+                              fontFamily: 'OmyuPretty',
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF111827),
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
 
-                      // 색상 선택 버튼들
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        children: colors.map((color) {
-                          final isSelected = color == selectedColor;
-                          return GestureDetector(
-                            onTap: () => setState(() => selectedColor = color),
-                            child: Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                color: color,
-                                shape: BoxShape.circle,
-                                border: isSelected
-                                    ? Border.all(
-                                        color: const Color(0xFF111827),
-                                        width: 2,
-                                      )
-                                    : null,
-                              ),
+                        // 카테고리 이름 입력
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: TextField(
+                            controller: categoryController,
+                            autofocus: true,
+                            style: const TextStyle(
+                              fontFamily: 'OmyuPretty',
+                              fontSize: 16,
+                              color: Color(0xFF111827),
                             ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                // 하단 버튼 영역
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    children: [
-                      // 취소
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => Navigator.of(context).pop(),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 20),
-                            child: const Text(
-                              '취소',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
+                            decoration: InputDecoration(
+                              hintText: '카테고리 이름...',
+                              hintStyle: const TextStyle(
                                 fontFamily: 'OmyuPretty',
-                                fontSize: 16,
-                                color: Color(0xFF6B7280),
+                                color: Color(0xFF9CA3AF),
                               ),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.zero,
                             ),
                           ),
                         ),
-                      ),
 
-                      // 완료
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            if (categoryController.text.trim().isNotEmpty) {
-                              Navigator.of(context).pop({
-                                'name': categoryController.text.trim(),
-                                'color': selectedColor,
-                              });
-                            }
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 20),
-                            child: const Text(
-                              '완료',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontFamily: 'OmyuPretty',
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFF6366F1),
+                        const SizedBox(height: 20),
+
+                        // 색상 선택 영역
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Column(
+                            children: [
+                              // 색상 선택 헤더
+                              const Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  '색상 선택',
+                                  style: TextStyle(
+                                    fontFamily: 'OmyuPretty',
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF6B7280),
+                                  ),
+                                ),
                               ),
-                            ),
+                              const SizedBox(height: 12),
+
+                              // 색상 선택 버튼들
+                              Wrap(
+                                spacing: 12,
+                                runSpacing: 12,
+                                children:
+                                    colors.map((color) {
+                                      final isSelected = color == selectedColor;
+                                      return GestureDetector(
+                                        onTap:
+                                            () => setState(
+                                              () => selectedColor = color,
+                                            ),
+                                        child: Container(
+                                          width: 32,
+                                          height: 32,
+                                          decoration: BoxDecoration(
+                                            color: color,
+                                            shape: BoxShape.circle,
+                                            border:
+                                                isSelected
+                                                    ? Border.all(
+                                                      color: const Color(
+                                                        0xFF111827,
+                                                      ),
+                                                      width: 2,
+                                                    )
+                                                    : null,
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    ],
+
+                        const SizedBox(height: 10),
+
+                        // 하단 버튼 영역
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Row(
+                            children: [
+                              // 취소
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () => Navigator.of(context).pop(),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 20,
+                                    ),
+                                    child: const Text(
+                                      '취소',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontFamily: 'OmyuPretty',
+                                        fontSize: 16,
+                                        color: Color(0xFF6B7280),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              // 완료
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    if (categoryController.text
+                                        .trim()
+                                        .isNotEmpty) {
+                                      Navigator.of(context).pop({
+                                        'name': categoryController.text.trim(),
+                                        'color': selectedColor,
+                                      });
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 20,
+                                    ),
+                                    child: const Text(
+                                      '완료',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontFamily: 'OmyuPretty',
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                        color: Color(0xFF6366F1),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 30),
+                      ],
+                    ),
                   ),
                 ),
-
-                const SizedBox(height: 30),
-              ],
-            ),
           ),
-        ),
-      ),
     );
   }
 }

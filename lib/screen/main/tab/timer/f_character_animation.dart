@@ -21,6 +21,7 @@ class _CharacterAnimationFragmentState
   String? _previousFocusAnimation;
   String? _previousBreakAnimation;
   bool _isInitialized = false;
+  VoidCallback? _playbackListener;
 
   @override
   void initState() {
@@ -74,19 +75,29 @@ class _CharacterAnimationFragmentState
       return;
     }
 
+    // 기존 리스너 제거
+    if (_playbackListener != null) {
+      controller.removeListener(_playbackListener!);
+      _playbackListener = null;
+    }
+
     // 타이머 상태와 비디오 재생 상태 동기화
     switch (timerState.status) {
       case TimerStatus.running:
         if (!controller.value.isPlaying) {
+          print('🎬 타이머 실행 중 - 비디오 재생');
           controller.play();
         }
+        // 리스너 제거 - 비디오가 멈춰도 자동 재개하지 않음 (음악과 충돌 방지)
         break;
       case TimerStatus.paused:
         if (controller.value.isPlaying) {
+          print('🎬 타이머 일시정지 - 비디오 일시정지');
           controller.pause();
         }
         break;
       case TimerStatus.stopped:
+        print('🎬 타이머 정지 - 비디오 정지');
         controller.pause();
         controller.seekTo(Duration.zero);
         break;
@@ -167,6 +178,11 @@ class _CharacterAnimationFragmentState
 
   @override
   void dispose() {
+    // 리스너 정리
+    if (_playbackListener != null) {
+      final controller = ref.read(videoControllerProvider);
+      controller?.removeListener(_playbackListener!);
+    }
     // 컨트롤러는 Provider가 관리하므로 여기서 dispose 안 함
     super.dispose();
   }

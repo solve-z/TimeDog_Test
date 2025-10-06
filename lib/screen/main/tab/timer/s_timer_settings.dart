@@ -4,6 +4,9 @@ import 'timer_notifier.dart';
 import 'vo/vo_timer.dart';
 import 'd_animation_selection.dart';
 import 'animation_provider.dart';
+import 'd_music_selection.dart';
+import 'music_provider.dart';
+import '../../../../common/data/vo_music_option.dart';
 import '../../../../common/dialog/d_number_picker.dart';
 
 class TimerSettingsScreen extends ConsumerStatefulWidget {
@@ -89,8 +92,9 @@ class _TimerSettingsScreenState extends ConsumerState<TimerSettingsScreen> {
     focusAnimationSelection = animationSelection.focusAnimationId;
     breakAnimationSelection = animationSelection.breakAnimationId;
 
-    // TODO: 저장된 음악 설정 로드
-    selectedMusic = null;
+    // 저장된 음악 설정 로드
+    final musicSelection = ref.read(musicProvider);
+    selectedMusic = musicSelection.musicId;
   }
 
   @override
@@ -460,57 +464,6 @@ class _TimerSettingsScreenState extends ConsumerState<TimerSettingsScreen> {
     return selected.name.isEmpty ? null : selected.name;
   }
 
-  Widget _buildMusicSelector() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: const BoxDecoration(
-              color: Color(0xFFE5E7EB),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.music_note,
-              color: Color(0xFF6B7280),
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              selectedMusic ?? '도서관 소음',
-              style: const TextStyle(
-                fontFamily: 'OmyuPretty',
-                fontSize: 14,
-                color: Color(0xFF6B7280),
-              ),
-            ),
-          ),
-          Container(
-            width: 32,
-            height: 32,
-            decoration: const BoxDecoration(
-              color: Color(0xFFE5E7EB),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.shuffle,
-              color: Color(0xFF6B7280),
-              size: 18,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _updateTimerSettings() {
     final newSettings = TimerSettings(
       totalRounds: totalRounds,
@@ -520,6 +473,74 @@ class _TimerSettingsScreenState extends ConsumerState<TimerSettingsScreen> {
     );
 
     ref.read(timerProvider.notifier).updateSettings(newSettings);
+  }
+
+  Widget _buildMusicSelector() {
+    final selectedOption = defaultMusicOptions.firstWhere(
+      (music) => music.id == selectedMusic,
+      orElse: () => defaultMusicOptions[0],
+    );
+
+    return GestureDetector(
+      onTap: () async {
+        final result = await showDialog<String>(
+          context: context,
+          builder:
+              (context) => MusicSelectionDialog(
+                title: '음악 선택',
+                currentSelection: selectedMusic,
+                musicOptions: defaultMusicOptions,
+              ),
+        );
+        if (result != null) {
+          setState(() {
+            selectedMusic = result;
+          });
+          // Provider에 저장
+          ref.read(musicProvider.notifier).setMusic(result);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF9FAFB),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: const BoxDecoration(
+                color: Color(0xFFE5E7EB),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                selectedOption.icon,
+                color: const Color(0xFF6B7280),
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                selectedOption.name,
+                style: const TextStyle(
+                  fontFamily: 'OmyuPretty',
+                  fontSize: 14,
+                  color: Color(0xFF6B7280),
+                ),
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios,
+              color: Color(0xFF9CA3AF),
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _saveSettings() {

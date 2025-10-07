@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'vo/vo_timer.dart';
 
 class AnimationSelection {
   final String focusAnimationId;
@@ -78,6 +79,21 @@ class AnimationSelection {
         print('⚠️  알 수 없는 휴식 애니메이션 ID: $breakAnimationId, 기본값 사용');
         return 'assets/images/animations/rest_white_Thum.jpg';
     }
+  }
+
+  // 현재 타이머 상태에 따라 적절한 썸네일 반환
+  // isRunning: 타이머가 실행 중인지 여부 (뽀모도로: running 상태, 스톱워치: 시작됨)
+  // round: 뽀모도로 라운드 (집중/휴식) - 스톡워치 모드에서는 무시됨
+  String getCurrentThumPath({required bool isRunning, PomodoroRound? round}) {
+    // 스톱워치 모드: 실행중이면 집중, 정지면 휴식
+    if (round == null) {
+      return isRunning ? getFocusThumPath() : getBreakThumPath();
+    }
+
+    // 뽀모도로 모드: 라운드에 따라 결정
+    return round == PomodoroRound.focus
+        ? getFocusThumPath()
+        : getBreakThumPath();
   }
 
   Map<String, dynamic> toJson() {

@@ -142,36 +142,36 @@ class _CharacterAnimationFragmentState
     final screenWidth = MediaQuery.of(context).size.width;
     final size = screenWidth > 600 ? 300.0 : 240.0;
 
-    return Container(
-      height: size,
-      width: size,
-      decoration: BoxDecoration(
-        color: Colors.black12,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child:
-            controller != null &&
-                    _isInitialized &&
-                    controller.value.isInitialized
-                ? FittedBox(
-                  fit: BoxFit.cover,
-                  child: SizedBox(
-                    width: controller.value.size.width,
-                    height: controller.value.size.height,
-                    child: VideoPlayer(controller),
-                  ),
-                )
-                : Center(
-                  // 로딩 중에는 플레이스홀더 이미지 표시 (회색 화면 대신)
-                  child: Image.asset(
-                    'assets/images/animations/drawing_white_Thum.jpg',
-                    fit: BoxFit.cover,
-                    width: size,
-                    height: size,
-                  ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: SizedBox(
+        height: size,
+        width: size,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // 항상 썸네일을 배경으로 표시
+            Image.asset(
+              animationSelection.getCurrentThumPath(
+                isRunning: timerState.status == TimerStatus.running,
+                round: timerState.round,
+              ),
+              fit: BoxFit.cover,
+            ),
+            // 비디오가 준비되면 그 위에 표시
+            if (controller != null &&
+                _isInitialized &&
+                controller.value.isInitialized)
+              FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: controller.value.size.width,
+                  height: controller.value.size.height,
+                  child: VideoPlayer(controller),
                 ),
+              ),
+          ],
+        ),
       ),
     );
   }

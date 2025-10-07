@@ -55,70 +55,92 @@ class _TodoSelectionDialogState extends ConsumerState<TodoSelectionDialog> {
                   vertical: 8,
                 ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          showDateSelection = !showDateSelection;
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF3F4F6),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              selectedDateFilter,
-                              style: const TextStyle(
-                                fontFamily: 'OmyuPretty',
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFF374151),
-                              ),
+                    // 왼쪽: 필터 버튼
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              showDateSelection = !showDateSelection;
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
                             ),
-                            const SizedBox(width: 4),
-                            const Icon(
-                              Icons.keyboard_arrow_down,
-                              size: 16,
-                              color: Color(0xFF6B7280),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF3F4F6),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                          ],
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  selectedDateFilter,
+                                  style: const TextStyle(
+                                    fontFamily: 'OmyuPretty',
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF374151),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                const Icon(
+                                  Icons.keyboard_arrow_down,
+                                  size: 16,
+                                  color: Color(0xFF6B7280),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () async {
-                        final newCategory = await showAddTodoDialog(
-                          context,
-                          selectedCategory: selectedDateFilter,
-                        );
+                    // 중앙: 날짜
+                    Text(
+                      _formatCurrentDate(),
+                      style: const TextStyle(
+                        fontFamily: 'OmyuPretty',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF374151),
+                      ),
+                    ),
+                    // 오른쪽: 추가 버튼
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: GestureDetector(
+                          onTap: () async {
+                            final newCategory = await showAddTodoDialog(
+                              context,
+                              selectedCategory: selectedDateFilter,
+                            );
 
-                        // 필터가 전체가 아닌 경우, 추가된 할일의 카테고리로 필터 변경
-                        if (newCategory != null && selectedDateFilter != '전체') {
-                          setState(() {
-                            selectedDateFilter = newCategory;
-                          });
-                        }
-                      },
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: const BoxDecoration(
-                          color: AppColors.primary,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.add,
-                          color: Colors.white,
-                          size: 24,
+                            // 필터가 전체가 아닌 경우, 추가된 할일의 카테고리로 필터 변경
+                            if (newCategory != null &&
+                                selectedDateFilter != '전체') {
+                              setState(() {
+                                selectedDateFilter = newCategory;
+                              });
+                            }
+                          },
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: const BoxDecoration(
+                              color: AppColors.primary,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.add,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -406,6 +428,13 @@ class _TodoSelectionDialogState extends ConsumerState<TodoSelectionDialog> {
     return date.year == now.year &&
         date.month == now.month &&
         date.day == now.day;
+  }
+
+  String _formatCurrentDate() {
+    final now = DateTime.now();
+    final weekdays = ['월', '화', '수', '목', '금', '토', '일'];
+    final weekday = weekdays[now.weekday - 1];
+    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} ($weekday)';
   }
 }
 

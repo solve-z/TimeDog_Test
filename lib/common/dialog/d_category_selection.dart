@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../screen/main/tab/todo/todo_provider.dart';
 import '../../screen/main/tab/todo/category_order_provider.dart';
+import '../../screen/main/tab/todo/category_provider.dart';
 import '../util/category_utils.dart';
 
 class CategorySelectionDialog extends ConsumerStatefulWidget {
@@ -19,6 +20,7 @@ class _CategorySelectionDialogState
   @override
   Widget build(BuildContext context) {
     final todoState = ref.watch(todoProvider);
+    final categoryState = ref.watch(categoryProvider);
     final categoryOrder = ref.watch(categoryOrderProvider);
     final categoryOrderNotifier = ref.read(categoryOrderProvider.notifier);
 
@@ -28,9 +30,22 @@ class _CategorySelectionDialogState
     );
 
     // 저장된 순서에 따라 카테고리 정렬
-    final categories = categoryOrderNotifier.sortCategoriesByOrder(
+    final allCategories = categoryOrderNotifier.sortCategoriesByOrder(
       extractedCategories,
     );
+
+    // 보관되지 않은 카테고리만 필터링
+    final categories = allCategories.where((cat) {
+      try {
+        final categoryVo = categoryState.categories.firstWhere(
+          (c) => c.name == cat['name'],
+        );
+        return !categoryVo.isArchived;
+      } catch (e) {
+        // 카테고리가 없으면 활성으로 간주
+        return true;
+      }
+    }).toList();
 
     return Dialog(
       backgroundColor: Colors.white,
@@ -126,6 +141,15 @@ class _CategorySelectionDialogState
                       onTap: () async {
                         final result = await _showNewCategoryDialog();
                         if (result != null) {
+                          // 새 카테고리를 CategoryProvider에 추가
+                          await ref
+                              .read(categoryProvider.notifier)
+                              .ensureCategoryExists(
+                                result['name'] as String,
+                                result['color'] as Color,
+                                (result['color'] as Color).withOpacity(0.8),
+                              );
+
                           // 새 카테고리를 순서에 추가
                           await ref
                               .read(categoryOrderProvider.notifier)
@@ -351,8 +375,36 @@ class _CategorySelectionDialogState
                                     if (categoryController.text
                                         .trim()
                                         .isNotEmpty) {
+                                      final newName = categoryController.text.trim();
+
+                                      // 중복 검사
+                                      final categoryState = ref.read(categoryProvider);
+                                      final existingCategory = categoryState.categories
+                                          .where((c) => c.name == newName)
+                                          .firstOrNull;
+
+                                      if (existingCategory != null) {
+                                        // 중복된 카테고리가 있음
+                                        Navigator.of(context).pop();
+
+                                        final statusMessage = existingCategory.isArchived
+                                            ? '보관함에 "$newName" 카테고리가 이미 존재합니다.'
+                                            : '"$newName" 카테고리가 이미 존재합니다.';
+
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              statusMessage,
+                                              style: const TextStyle(fontFamily: 'OmyuPretty'),
+                                            ),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                        return;
+                                      }
+
                                       Navigator.of(context).pop({
-                                        'name': categoryController.text.trim(),
+                                        'name': newName,
                                         'color': selectedColor,
                                       });
                                     }

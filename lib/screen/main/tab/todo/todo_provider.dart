@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'vo/vo_todo_item.dart';
@@ -120,6 +121,23 @@ class TodoNotifier extends StateNotifier<TodoState> {
     await updateTodo(updatedTodo);
 
     state = state.copyWith(selectedTodo: updatedTodo);
+  }
+
+  // 할일을 다른 카테고리로 이동
+  Future<void> moveTodoToCategory(String todoId, String newCategory, Color newColor, Color newAccentColor) async {
+    final updatedTodos = state.allTodos.map((todo) {
+      if (todo.id == todoId) {
+        return todo.copyWith(
+          category: newCategory,
+          color: newColor,
+          accentColor: newAccentColor,
+        );
+      }
+      return todo;
+    }).toList();
+
+    state = state.copyWith(allTodos: updatedTodos);
+    await _saveTodos();
   }
 }
 

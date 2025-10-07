@@ -55,6 +55,7 @@ dependencies:
 
   # Audio Player
   audioplayers: ^6.1.0
+  audio_session: ^0.1.21
 
   # Logging
   logger: ^2.0.2

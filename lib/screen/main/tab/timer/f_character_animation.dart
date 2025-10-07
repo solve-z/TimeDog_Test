@@ -5,6 +5,7 @@ import 'timer_notifier.dart';
 import 'vo/vo_timer.dart';
 import 'video_controller_provider.dart';
 import 'animation_provider.dart';
+import '../../../../common/utils/app_logger.dart';
 
 class CharacterAnimationFragment extends ConsumerStatefulWidget {
   const CharacterAnimationFragment({super.key});
@@ -72,6 +73,7 @@ class _CharacterAnimationFragmentState
     final controller = ref.read(videoControllerProvider);
 
     if (controller == null || !controller.value.isInitialized) {
+      AppLogger.video.d('컨트롤러가 없거나 초기화되지 않음 - 스킵');
       return;
     }
 
@@ -81,29 +83,36 @@ class _CharacterAnimationFragmentState
       _playbackListener = null;
     }
 
+    AppLogger.video.i('========== 타이머 상태 확인 ==========');
+    AppLogger.video.d('타이머 상태: ${timerState.status}');
+    AppLogger.video.d('비디오 재생 중: ${controller.value.isPlaying}');
+
     // 타이머 상태와 비디오 재생 상태 동기화
     switch (timerState.status) {
       case TimerStatus.running:
         if (!controller.value.isPlaying) {
-          print('🎬 타이머 실행 중 - 비디오 재생');
+          AppLogger.video.i('타이머 실행 중 - 비디오 재생 시작');
           controller.play();
+          AppLogger.video.d('비디오 play() 호출 완료');
+        } else {
+          AppLogger.video.d('비디오 이미 재생 중');
         }
-        // 리스너 제거 - 비디오가 멈춰도 자동 재개하지 않음 (음악과 충돌 방지)
         break;
       case TimerStatus.paused:
         if (controller.value.isPlaying) {
-          print('🎬 타이머 일시정지 - 비디오 일시정지');
+          AppLogger.video.i('타이머 일시정지 - 비디오 일시정지');
           controller.pause();
         }
         break;
       case TimerStatus.stopped:
-        print('🎬 타이머 정지 - 비디오 정지');
+        AppLogger.video.i('타이머 정지 - 비디오 정지');
         controller.pause();
         controller.seekTo(Duration.zero);
         break;
     }
 
     _previousStatus = timerState.status;
+    AppLogger.video.i('========== 타이머 상태 확인 끝 ==========');
   }
 
   @override

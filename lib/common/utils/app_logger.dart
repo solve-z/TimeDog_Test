@@ -1,4 +1,6 @@
 import 'package:logger/logger.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 
 /// 앱 전역 로거
 ///
@@ -19,12 +21,44 @@ class AppLogger {
   factory AppLogger() => _instance;
   AppLogger._internal();
 
-  // 콘솔 출력만 사용
-  static final _consoleOutput = ConsoleOutput();
+  // 파일 출력 추가
+  static MultiOutput? _multiOutput;
+
+  static Future<void> init() async {
+    if (_multiOutput != null) return;
+
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final logFile = File('${directory.path}/logs/app_logs.txt');
+
+      // 로그 디렉토리 생성
+      if (!await logFile.parent.exists()) {
+        await logFile.parent.create(recursive: true);
+      }
+
+      // 기존 로그 파일 삭제 (새로운 세션 시작)
+      if (await logFile.exists()) {
+        await logFile.delete();
+      }
+
+      _multiOutput = MultiOutput([
+        ConsoleOutput(),
+        FileOutput(file: logFile),
+      ]);
+
+      print('✅ 로그 파일 초기화 완료: ${logFile.path}');
+    } catch (e) {
+      print('❌ 로그 파일 초기화 실패: $e');
+      _multiOutput = MultiOutput([ConsoleOutput()]);
+    }
+  }
+
+  // 콘솔 + 파일 출력 (초기화 전에는 콘솔만)
+  static LogOutput get _output => _multiOutput ?? ConsoleOutput();
 
   // 카테고리별 로거
   static final Logger timer = Logger(
-    output: _consoleOutput,
+    output: _output,
     printer: PrefixPrinter(
       PrettyPrinter(
         methodCount: 0,
@@ -42,7 +76,7 @@ class AppLogger {
   );
 
   static final Logger music = Logger(
-    output: _consoleOutput,
+    output: _output,
     printer: PrefixPrinter(
       PrettyPrinter(
         methodCount: 0,
@@ -60,7 +94,7 @@ class AppLogger {
   );
 
   static final Logger sound = Logger(
-    output: _consoleOutput,
+    output: _output,
     printer: PrefixPrinter(
       PrettyPrinter(
         methodCount: 0,
@@ -78,7 +112,7 @@ class AppLogger {
   );
 
   static final Logger video = Logger(
-    output: _consoleOutput,
+    output: _output,
     printer: PrefixPrinter(
       PrettyPrinter(
         methodCount: 0,

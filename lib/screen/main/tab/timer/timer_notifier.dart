@@ -212,8 +212,14 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
     }
   }
 
-  void start() async {
+  Future<void> start() async {
     if (state.status == TimerStatus.running) return;
+
+    // 할일 선택 여부 확인
+    final todoState = _ref.read(todoProvider);
+    if (todoState.selectedTodo == null) {
+      throw Exception('NO_TODO_SELECTED');
+    }
 
     // 완전히 타이머 정지하고 초기화
     _stopTimer();

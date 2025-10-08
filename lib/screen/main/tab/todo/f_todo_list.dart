@@ -9,7 +9,12 @@ class TodoListFragment extends ConsumerStatefulWidget {
   final ScrollPhysics? physics; // 스크롤 물리학 설정
   final bool shrinkWrap; // 내용 크기에 맞게 조정
 
-  const TodoListFragment({super.key, this.filteredTodos, this.physics, this.shrinkWrap = false});
+  const TodoListFragment({
+    super.key,
+    this.filteredTodos,
+    this.physics,
+    this.shrinkWrap = false,
+  });
 
   @override
   ConsumerState<TodoListFragment> createState() => _TodoListFragmentState();
@@ -100,62 +105,110 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
   }
 
   Widget _buildTodoItem(TodoItemVo todo) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+    return GestureDetector(
+      onLongPress:
+          todo.isMoved
+              ? null
+              : () {
+                _showTodoContextMenu(context, todo);
+              },
       child: InkWell(
-        onTap: () {
-          _showTodoActionBottomSheet(todo);
-        },
-        child: Row(
-          children: [
-            Checkbox(
-              value: todo.isCompleted,
-              onChanged: (value) async {
-                await ref
-                    .read(todoProvider.notifier)
-                    .toggleTodoComplete(todo.id);
-              },
-              activeColor: AppColors.primary,
-              side: BorderSide(color: Colors.grey.shade400),
-            ),
-            Expanded(
-              child: Text(
-                todo.title,
-                style: TextStyle(
-                  fontSize: 14,
-                  decoration:
-                      todo.isCompleted ? TextDecoration.lineThrough : null,
-                  color: todo.isCompleted ? Colors.grey : Colors.black,
+        onTap:
+            todo.isMoved
+                ? null
+                : () {
+                  // 이동된 할일은 클릭 불가
+                },
+        child: Opacity(
+          opacity: todo.isMoved ? 0.5 : 1.0,
+          child: Row(
+            children: [
+              // 이동된 할일은 화살표 아이콘, 아니면 체크박스
+              if (todo.isMoved)
+                Container(
+                  width: 40,
+                  height: 40,
+                  alignment: Alignment.center,
+                  child: Icon(
+                    Icons.arrow_forward,
+                    size: 20,
+                    color: Colors.grey.shade500,
+                  ),
+                )
+              else
+                Checkbox(
+                  value: todo.isCompleted,
+                  onChanged: (value) async {
+                    await ref
+                        .read(todoProvider.notifier)
+                        .toggleTodoComplete(todo.id);
+                  },
+                  activeColor: AppColors.primary,
+                  side: BorderSide(color: Colors.grey.shade400),
                 ),
-              ),
-            ),
-            Text(
-              _formatTotalTime(todo.totalFocusTimeInMinutes),
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-            PopupMenuButton<String>(
-              offset: const Offset(-20, 40),
-              onSelected: (value) {
-                if (value == 'delete') {
-                  _showDeleteConfirmDialog(todo);
-                }
-              },
-              itemBuilder:
-                  (BuildContext context) => [
-                    const PopupMenuItem<String>(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete, size: 16, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text('삭제', style: TextStyle(color: Colors.red)),
-                        ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      todo.title,
+                      style: TextStyle(
+                        fontSize: 14,
+                        decoration:
+                            todo.isCompleted
+                                ? TextDecoration.lineThrough
+                                : null,
+                        color:
+                            todo.isMoved
+                                ? Colors.grey.shade500
+                                : (todo.isCompleted
+                                    ? Colors.grey
+                                    : Colors.black),
                       ),
                     ),
+                    // 이동된 날짜 표시
+                    if (todo.movedToDate != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          '${todo.movedToDate!.month}/${todo.movedToDate!.day}로 이동됨',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ),
                   ],
-              icon: const Icon(Icons.more_vert, color: Colors.grey),
-            ),
-          ],
+                ),
+              ),
+              Text(
+                _formatTotalTime(todo.totalFocusTimeInMinutes),
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              PopupMenuButton<String>(
+                offset: const Offset(-20, 40),
+                onSelected: (value) {
+                  if (value == 'delete') {
+                    _showDeleteConfirmDialog(todo);
+                  }
+                },
+                itemBuilder:
+                    (BuildContext context) => [
+                      const PopupMenuItem<String>(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete, size: 16, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('삭제', style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                    ],
+                icon: const Icon(Icons.more_vert, color: Colors.grey),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -390,6 +443,145 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
     );
   }
 
+  // 바텀시트 액션 메뉴 표시
+  void _showTodoContextMenu(BuildContext context, TodoItemVo todo) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final todoDate = DateTime(
+      todo.scheduledDate.year,
+      todo.scheduledDate.month,
+      todo.scheduledDate.day,
+    );
+
+    // 과거 할일인지 확인
+    final isPast = todoDate.isBefore(today);
+    // 오늘 할일인지 확인
+    final isToday = todoDate.isAtSameMomentAs(today);
+    // 이미 이동된 할일인지 확인
+    final isAlreadyMoved = todo.movedToDate != null;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder:
+          (context) => SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 드래그 핸들
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+
+                // 할일 제목
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 16,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: todo.color,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          todo.title,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF111827),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const Divider(height: 1),
+
+                // 오늘로 이동 (과거 할일만, 이동되지 않은 경우만)
+                if (isPast && !isAlreadyMoved)
+                  ListTile(
+                    leading: const Icon(Icons.today, color: Color(0xFF6366F1)),
+                    title: const Text('오늘로 이동'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _moveToToday(todo);
+                    },
+                  ),
+
+                // 내일로 미루기 (오늘 할일만, 이동되지 않은 경우만)
+                if (isToday && !isAlreadyMoved)
+                  ListTile(
+                    leading: const Icon(
+                      Icons.schedule,
+                      color: Color(0xFF10B981),
+                    ),
+                    title: const Text('내일로 미루기'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _postponeToTomorrow(todo);
+                    },
+                  ),
+
+                // 수정
+                ListTile(
+                  leading: const Icon(Icons.edit, color: Color(0xFF6B7280)),
+                  title: const Text('수정'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showEditTodoDialog(todo);
+                  },
+                ),
+
+                // 삭제
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Colors.red),
+                  title: const Text('삭제', style: TextStyle(color: Colors.red)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showDeleteConfirmDialog(todo);
+                  },
+                ),
+
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+    );
+  }
+
+  void _moveToToday(TodoItemVo todo) async {
+    await ref.read(todoProvider.notifier).moveToToday(todo.id);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${todo.title}을(를) 오늘로 이동했습니다'),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   void _postponeToTomorrow(TodoItemVo todo) async {
     await ref.read(todoProvider.notifier).postponeToTomorrow(todo.id);
   }
@@ -460,6 +652,7 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
           if (entry.key != groupedTodos.keys.last) {
             if (currentIndex == index) {
               return Container(
+                margin: EdgeInsets.symmetric(vertical: 8),
                 width: double.infinity,
                 height: 2,
                 color: Colors.grey.shade300,

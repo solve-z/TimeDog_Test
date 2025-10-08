@@ -51,46 +51,41 @@ class _TodoScreenState extends ConsumerState<TodoScreen>
     return Scaffold(
       body: CustomScrollView(
         slivers: [
+          // 상단 고정 영역 (InfoCard + ViewHeader)
           SliverToBoxAdapter(
             child: Column(
               children: [
                 _buildInfoCard(),
-                const SizedBox(height: 12),
-                Container(
-                  width: double.infinity,
-                  height: 1,
-                  color: Colors.grey.shade300,
-                ),
                 const SizedBox(height: 16),
                 _buildViewHeader(),
                 const SizedBox(height: 16),
               ],
             ),
           ),
+
+          // 메인 컨텐츠 (할일 리스트 or 타임 레코드)
           SliverToBoxAdapter(
             child: Container(
-              margin: EdgeInsets.symmetric(horizontal: _viewIndex == 0 ? 24 : 48),
+              margin: EdgeInsets.symmetric(
+                horizontal: _viewIndex == 0 ? 24 : 48,
+              ),
               child: _buildCurrentView(),
             ),
           ),
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 100), // SafeArea 공간
-          ),
+          // 하단 여백 (FloatingButton 공간 확보)
+          const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
       floatingActionButton: SizedBox(
         width: 48,
         height: 48,
         child: FloatingActionButton(
-          onPressed: () => showAddTodoDialog(context, selectedDate: _selectedDate),
+          onPressed:
+              () => showAddTodoDialog(context, selectedDate: _selectedDate),
           backgroundColor: AppColors.primary,
           elevation: 0,
           shape: const CircleBorder(),
-          child: const Icon(
-            Icons.add,
-            color: Colors.white,
-            size: 20,
-          ),
+          child: const Icon(Icons.add, color: Colors.white, size: 20),
         ),
       ),
     );

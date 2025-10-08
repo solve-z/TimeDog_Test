@@ -13,6 +13,7 @@ class TodoItemVo {
   bool isCompleted;
   final DateTime? completedAt;
   final List<FocusTimeRecord> focusTimeRecords;
+  final DateTime? movedToDate; // 어디로 이동되었는지 (원본에만 표시)
 
   TodoItemVo({
     required this.id,
@@ -27,12 +28,16 @@ class TodoItemVo {
     this.isCompleted = false,
     this.completedAt,
     this.focusTimeRecords = const [],
+    this.movedToDate,
   });
 
   // 총 집중 시간 (분 단위)
   int get totalFocusTimeInMinutes {
     return focusTimeRecords.fold(0, (sum, record) => sum + record.focusDurationInMinutes);
   }
+
+  // 이동된 할일인지 확인
+  bool get isMoved => movedToDate != null;
 
   // 할일 복사 (수정용)
   TodoItemVo copyWith({
@@ -48,6 +53,7 @@ class TodoItemVo {
     bool? isCompleted,
     DateTime? completedAt,
     List<FocusTimeRecord>? focusTimeRecords,
+    DateTime? movedToDate,
   }) {
     return TodoItemVo(
       id: id ?? this.id,
@@ -62,6 +68,7 @@ class TodoItemVo {
       isCompleted: isCompleted ?? this.isCompleted,
       completedAt: completedAt ?? this.completedAt,
       focusTimeRecords: focusTimeRecords ?? this.focusTimeRecords,
+      movedToDate: movedToDate ?? this.movedToDate,
     );
   }
 
@@ -88,6 +95,7 @@ class TodoItemVo {
       'isCompleted': isCompleted,
       'completedAt': completedAt?.toIso8601String(),
       'focusTimeRecords': focusTimeRecords.map((record) => record.toJson()).toList(),
+      'movedToDate': movedToDate?.toIso8601String(),
     };
   }
 
@@ -108,6 +116,7 @@ class TodoItemVo {
       focusTimeRecords: (json['focusTimeRecords'] as List)
           .map((record) => FocusTimeRecord.fromJson(record))
           .toList(),
+      movedToDate: json['movedToDate'] != null ? DateTime.parse(json['movedToDate']) : null,
     );
   }
 }

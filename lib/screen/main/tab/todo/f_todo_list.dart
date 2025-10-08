@@ -278,6 +278,7 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
             ElevatedButton(
               onPressed: () async {
                 if (titleController.text.trim().isNotEmpty) {
+                  final navigator = Navigator.of(context);
                   final updatedTodo = todo.copyWith(
                     title: titleController.text.trim(),
                     description:
@@ -292,7 +293,7 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
 
                   await ref.read(todoProvider.notifier).updateTodo(updatedTodo);
 
-                  Navigator.of(context).pop();
+                  navigator.pop();
                 }
               },
               child: const Text('수정'),
@@ -606,8 +607,9 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
                 foregroundColor: Colors.white,
               ),
               onPressed: () async {
+                final navigator = Navigator.of(context);
                 await ref.read(todoProvider.notifier).deleteTodo(todo.id);
-                Navigator.of(context).pop();
+                navigator.pop();
               },
               child: const Text('삭제'),
             ),

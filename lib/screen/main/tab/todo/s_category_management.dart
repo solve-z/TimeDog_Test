@@ -546,7 +546,10 @@ class _CategoryManagementScreenState
                             ? Icons.check_box
                             : Icons.radio_button_unchecked,
                         size: 18,
-                        color: isArchived ? Colors.green : category['color'] as Color,
+                        color:
+                            isArchived
+                                ? Colors.green
+                                : category['color'] as Color,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -582,7 +585,7 @@ class _CategoryManagementScreenState
                     ],
                   ),
                 );
-              }).toList(),
+              }),
           ],
         ),
       ),
@@ -824,6 +827,10 @@ class _CategoryManagementScreenState
                                 child: GestureDetector(
                                   onTap: () async {
                                     if (nameController.text.trim().isNotEmpty) {
+                                      final navigator = Navigator.of(context);
+                                      final messenger = ScaffoldMessenger.of(
+                                        context,
+                                      );
                                       final newName =
                                           nameController.text.trim();
 
@@ -834,7 +841,7 @@ class _CategoryManagementScreenState
                                           newName,
                                           selectedColor,
                                         );
-                                        Navigator.of(context).pop();
+                                        navigator.pop();
                                         return;
                                       }
 
@@ -853,16 +860,14 @@ class _CategoryManagementScreenState
 
                                       if (existingCategory != null) {
                                         // 중복된 카테고리가 있음
-                                        Navigator.of(context).pop();
+                                        navigator.pop();
 
                                         final statusMessage =
                                             existingCategory.isArchived
                                                 ? '보관함에 "$newName" 카테고리가 이미 존재합니다.'
                                                 : '"$newName" 카테고리가 이미 존재합니다.';
 
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
+                                        messenger.showSnackBar(
                                           SnackBar(
                                             content: Text(
                                               statusMessage,
@@ -881,7 +886,7 @@ class _CategoryManagementScreenState
                                         newName,
                                         selectedColor,
                                       );
-                                      Navigator.of(context).pop();
+                                      navigator.pop();
                                     }
                                   },
                                   child: Container(
@@ -1056,8 +1061,9 @@ class _CategoryManagementScreenState
               ),
               TextButton(
                 onPressed: () async {
+                  final navigator = Navigator.of(context);
                   await _unarchiveCategory(categoryName);
-                  Navigator.of(context).pop();
+                  navigator.pop();
                 },
                 child: const Text(
                   '복원',
@@ -1164,6 +1170,9 @@ class _CategoryManagementScreenState
               ),
               TextButton(
                 onPressed: () async {
+                  final navigator = Navigator.of(context);
+                  final messenger = ScaffoldMessenger.of(context);
+
                   // 카테고리 삭제
                   final categoryNotifier = ref.read(categoryProvider.notifier);
                   await categoryNotifier.deleteCategory(categoryName);
@@ -1176,11 +1185,11 @@ class _CategoryManagementScreenState
                     categoryName,
                   );
 
-                  Navigator.of(context).pop();
+                  navigator.pop();
 
                   // 삭제 완료 메시지
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    messenger.showSnackBar(
                       SnackBar(
                         content: Text(
                           '$categoryName 카테고리가 삭제되었습니다.',
@@ -1207,9 +1216,10 @@ class _CategoryManagementScreenState
     final todoState = ref.read(todoProvider);
 
     // 이동 가능한 카테고리 목록 (현재 카테고리 제외, 보관되지 않은 것만)
-    final availableCategories = categoryState.categories
-        .where((cat) => cat.name != fromCategory && !cat.isArchived)
-        .toList();
+    final availableCategories =
+        categoryState.categories
+            .where((cat) => cat.name != fromCategory && !cat.isArchived)
+            .toList();
 
     if (availableCategories.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1225,81 +1235,89 @@ class _CategoryManagementScreenState
     }
 
     // 이동할 할일 개수
-    final todoCount = todoState.allTodos
-        .where((todo) => todo.category == fromCategory && !todo.isCompleted)
-        .length;
+    final todoCount =
+        todoState.allTodos
+            .where((todo) => todo.category == fromCategory && !todo.isCompleted)
+            .length;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text(
-          '할일 이동',
-          style: TextStyle(
-            fontFamily: 'OmyuPretty',
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '$fromCategory 카테고리의 미완료 할일 $todoCount개를\n다른 카테고리로 이동합니다.',
-              style: const TextStyle(
-                fontFamily: 'OmyuPretty',
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              '이동할 카테고리를 선택하세요:',
+      builder:
+          (context) => AlertDialog(
+            title: const Text(
+              '할일 이동',
               style: TextStyle(
                 fontFamily: 'OmyuPretty',
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 12),
-            ...availableCategories.map((category) {
-              return ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  width: 20,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    color: category.color,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                title: Text(
-                  category.name,
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$fromCategory 카테고리의 미완료 할일 $todoCount개를\n다른 카테고리로 이동합니다.',
                   style: const TextStyle(
                     fontFamily: 'OmyuPretty',
                     fontSize: 14,
                   ),
                 ),
-                onTap: () async {
-                  Navigator.of(context).pop();
-                  await _moveTodosToCategory(fromCategory, category.name, category.color, category.accentColor);
-                },
-              );
-            }).toList(),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text(
-              '취소',
-              style: TextStyle(
-                fontFamily: 'OmyuPretty',
-                color: Colors.grey,
-              ),
+                const SizedBox(height: 20),
+                const Text(
+                  '이동할 카테고리를 선택하세요:',
+                  style: TextStyle(
+                    fontFamily: 'OmyuPretty',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ...availableCategories.map((category) {
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: category.color,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    title: Text(
+                      category.name,
+                      style: const TextStyle(
+                        fontFamily: 'OmyuPretty',
+                        fontSize: 14,
+                      ),
+                    ),
+                    onTap: () async {
+                      final navigator = Navigator.of(context);
+                      navigator.pop();
+                      await _moveTodosToCategory(
+                        fromCategory,
+                        category.name,
+                        category.color,
+                        category.accentColor,
+                      );
+                    },
+                  );
+                }).toList(),
+              ],
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text(
+                  '취소',
+                  style: TextStyle(
+                    fontFamily: 'OmyuPretty',
+                    color: Colors.grey,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -1314,9 +1332,10 @@ class _CategoryManagementScreenState
     final todoNotifier = ref.read(todoProvider.notifier);
 
     // 이동할 할일 목록 (미완료만)
-    final todosToMove = todoState.allTodos
-        .where((todo) => todo.category == fromCategory && !todo.isCompleted)
-        .toList();
+    final todosToMove =
+        todoState.allTodos
+            .where((todo) => todo.category == fromCategory && !todo.isCompleted)
+            .toList();
 
     // 모든 할일 이동
     for (var todo in todosToMove) {

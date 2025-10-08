@@ -4,7 +4,7 @@ import 'package:timedog_test/common/constant/app_constants.dart';
 import '../../screen/main/tab/todo/todo_provider.dart';
 import '../../screen/main/tab/todo/vo/vo_todo_item.dart';
 import '../../screen/main/tab/todo/category_order_provider.dart';
-import '../util/category_utils.dart';
+import '../utils/category_utils.dart';
 import 'd_category_selection.dart';
 
 class AddTodoDialog extends ConsumerStatefulWidget {
@@ -131,7 +131,10 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
                     child: InkWell(
                       onTap: () => _showCategorySelection(),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 20,
+                          horizontal: 16,
+                        ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -171,7 +174,10 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
                         }
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 20,
+                          horizontal: 16,
+                        ),
                         child: const Text(
                           '완료',
                           textAlign: TextAlign.center,
@@ -246,9 +252,10 @@ Future<String?> showAddTodoDialog(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (context) => AddTodoDialog(
-      selectedDate: selectedDate,
-      selectedCategory: selectedCategory,
-    ),
+    builder:
+        (context) => AddTodoDialog(
+          selectedDate: selectedDate,
+          selectedCategory: selectedCategory,
+        ),
   );
 }

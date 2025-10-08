@@ -11,7 +11,8 @@ import '../todo/vo/vo_todo_item.dart';
 import 'music_player_service.dart';
 import 'music_provider.dart';
 
-class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserver {
+class TimerNotifier extends StateNotifier<TimerState>
+    with WidgetsBindingObserver {
   TimerNotifier(this._ref) : super(const TimerState()) {
     _initializeState();
     _initializeNotifications();
@@ -61,16 +62,25 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
     }
   }
 
-  TimerState _restoreTimerState(TimerState savedState, TimerSettings currentSettings) {
+  TimerState _restoreTimerState(
+    TimerState savedState,
+    TimerSettings currentSettings,
+  ) {
     // 실행 중인 타이머가 있었는지 확인
     // 타이머가 "실행 중" 상태였고, 시작/종료 시간이 기록되어 있으면 → 복원을 시도
-    if (savedState.status == TimerStatus.running && savedState.startTime != null && savedState.endTime != null) {
+    if (savedState.status == TimerStatus.running &&
+        savedState.startTime != null &&
+        savedState.endTime != null) {
       final now = DateTime.now();
       final targetEndTime = savedState.endTime!;
 
       if (now.isAfter(targetEndTime)) {
         // 이미 완료된 상태 - 다음 phase로 전환
-        return _calculateCompletedState(savedState, currentSettings, now.difference(targetEndTime));
+        return _calculateCompletedState(
+          savedState,
+          currentSettings,
+          now.difference(targetEndTime),
+        );
       } else {
         // 아직 진행 중 - 남은 시간으로 복원
         final remainingTime = targetEndTime.difference(now);
@@ -87,20 +97,26 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
     return savedState.copyWith(settings: currentSettings);
   }
 
-  TimerState _calculateCompletedState(TimerState savedState, TimerSettings settings, Duration elapsed) {
+  TimerState _calculateCompletedState(
+    TimerState savedState,
+    TimerSettings settings,
+    Duration elapsed,
+  ) {
     // 복잡한 계산이 필요한 경우 (여러 phase를 지나친 경우)
     // 간단히 다음 phase로 전환된 일시정지 상태로 설정
     if (savedState.round == PomodoroRound.focus) {
       final isLongBreak = savedState.currentRound == settings.totalRounds;
-      final nextRound = isLongBreak ? PomodoroRound.longBreak : PomodoroRound.shortBreak;
+      final nextRound =
+          isLongBreak ? PomodoroRound.longBreak : PomodoroRound.shortBreak;
 
       return savedState.copyWith(
         settings: settings,
         status: TimerStatus.paused,
         round: nextRound,
-        currentTime: nextRound == PomodoroRound.longBreak
-            ? settings.longBreakTime
-            : settings.shortBreakTime,
+        currentTime:
+            nextRound == PomodoroRound.longBreak
+                ? settings.longBreakTime
+                : settings.shortBreakTime,
         completedRounds: savedState.currentRound,
         endTime: DateTime.now(),
         startTime: null,
@@ -129,7 +145,6 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
       }
     }
   }
-
 
   void _saveSettings() async {
     final prefs = await SharedPreferences.getInstance();
@@ -231,7 +246,8 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
     final now = DateTime.now();
 
     // 완료 상태에서 시작하면 새로운 사이클 시작
-    if (state.status == TimerStatus.stopped && state.completedRounds == state.settings.totalRounds) {
+    if (state.status == TimerStatus.stopped &&
+        state.completedRounds == state.settings.totalRounds) {
       _targetEndTime = now.add(state.settings.focusTime);
       state = TimerState(
         mode: state.mode,
@@ -242,7 +258,10 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
         round: PomodoroRound.focus,
         startTime: now,
         endTime: _targetEndTime,
-        roundStatusList: List.generate(state.settings.totalRounds, (_) => RoundStatus.notStarted),
+        roundStatusList: List.generate(
+          state.settings.totalRounds,
+          (_) => RoundStatus.notStarted,
+        ),
       );
     } else {
       // 새로운 타이머 시작 또는 일시정지에서 재개
@@ -251,7 +270,7 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
       // 일시정지에서 재개하는 경우 startTime을 현재 시간으로 새로 설정
       state = state.copyWith(
         status: TimerStatus.running,
-        startTime: now,  // 항상 현재 시간으로 설정
+        startTime: now, // 항상 현재 시간으로 설정
         endTime: _targetEndTime,
       );
     }
@@ -261,7 +280,8 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
 
     try {
       // 백그라운드 권한 확인 및 요청
-      final hasPermission = await _notificationService.requestBatteryOptimizationExemption();
+      final hasPermission =
+          await _notificationService.requestBatteryOptimizationExemption();
       if (!hasPermission) {
         print('백그라운드 실행 권한이 없습니다. 앱 설정에서 배터리 최적화를 해제해주세요.');
       }
@@ -271,7 +291,6 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
       if (!enabled) {
         print('백그라운드 실행 활성화 실패. 상태 저장으로 대체됩니다.');
       }
-
     } catch (e) {
       print('백그라운드 실행 활성화 실패: $e');
     }
@@ -282,7 +301,9 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
     state = state.copyWith(endTime: _targetEndTime);
 
     AppLogger.timer.i('타이머 시작 - 현재 시간: ${state.currentTime.inSeconds}초');
-    AppLogger.timer.d('목표 종료 시간: ${_targetEndTime!.hour}:${_targetEndTime!.minute}:${_targetEndTime!.second}');
+    AppLogger.timer.d(
+      '목표 종료 시간: ${_targetEndTime!.hour}:${_targetEndTime!.minute}:${_targetEndTime!.second}',
+    );
     AppLogger.timer.d('라운드: ${state.round}, 상태: ${state.status}');
 
     // 타이머 시작 (비디오 재생 시작)
@@ -369,10 +390,7 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
         endTime: pauseTime,
       );
     } else {
-      state = state.copyWith(
-        status: TimerStatus.paused,
-        endTime: pauseTime,
-      );
+      state = state.copyWith(status: TimerStatus.paused, endTime: pauseTime);
     }
 
     // 타이머 상태 완전히 초기화
@@ -569,13 +587,17 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
           focusType: FocusType.pomodoro,
         );
         await todoNotifier.addFocusTimeToSelectedTodo(focusRecord);
-
       }
 
       // roundStatusList 업데이트: 현재 라운드를 집중 완료로 표시
-      final updatedStatusList = List<RoundStatus>.from(state.roundStatusList.isEmpty
-          ? List.generate(state.settings.totalRounds, (_) => RoundStatus.notStarted)
-          : state.roundStatusList);
+      final updatedStatusList = List<RoundStatus>.from(
+        state.roundStatusList.isEmpty
+            ? List.generate(
+              state.settings.totalRounds,
+              (_) => RoundStatus.notStarted,
+            )
+            : state.roundStatusList,
+      );
       if ((state.currentRound - 1) < updatedStatusList.length) {
         updatedStatusList[state.currentRound - 1] = RoundStatus.focusCompleted;
       }
@@ -584,9 +606,10 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
       final nextRound =
           isLongBreak ? PomodoroRound.longBreak : PomodoroRound.shortBreak;
 
-      final nextTime = nextRound == PomodoroRound.longBreak
-          ? state.settings.longBreakTime
-          : state.settings.shortBreakTime;
+      final nextTime =
+          nextRound == PomodoroRound.longBreak
+              ? state.settings.longBreakTime
+              : state.settings.shortBreakTime;
 
       AppLogger.timer.i('휴식 전환 - 다음 라운드: $nextRound');
       AppLogger.timer.i('휴식 시간: ${nextTime.inSeconds}초');
@@ -616,11 +639,17 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
         );
 
         // roundStatusList 업데이트: 현재 라운드를 휴식 완료로 표시
-        final updatedStatusList = List<RoundStatus>.from(state.roundStatusList.isEmpty
-            ? List.generate(state.settings.totalRounds, (_) => RoundStatus.notStarted)
-            : state.roundStatusList);
+        final updatedStatusList = List<RoundStatus>.from(
+          state.roundStatusList.isEmpty
+              ? List.generate(
+                state.settings.totalRounds,
+                (_) => RoundStatus.notStarted,
+              )
+              : state.roundStatusList,
+        );
         if ((state.currentRound - 1) < updatedStatusList.length) {
-          updatedStatusList[state.currentRound - 1] = RoundStatus.breakCompleted;
+          updatedStatusList[state.currentRound - 1] =
+              RoundStatus.breakCompleted;
         }
 
         state = state.copyWith(
@@ -644,11 +673,17 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
         );
 
         // roundStatusList 업데이트: 마지막 라운드를 휴식 완료로 표시
-        final updatedStatusList = List<RoundStatus>.from(state.roundStatusList.isEmpty
-            ? List.generate(state.settings.totalRounds, (_) => RoundStatus.notStarted)
-            : state.roundStatusList);
+        final updatedStatusList = List<RoundStatus>.from(
+          state.roundStatusList.isEmpty
+              ? List.generate(
+                state.settings.totalRounds,
+                (_) => RoundStatus.notStarted,
+              )
+              : state.roundStatusList,
+        );
         if ((state.currentRound - 1) < updatedStatusList.length) {
-          updatedStatusList[state.currentRound - 1] = RoundStatus.breakCompleted;
+          updatedStatusList[state.currentRound - 1] =
+              RoundStatus.breakCompleted;
         }
 
         state = TimerState(
@@ -710,7 +745,8 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
     if (state.mode == TimerMode.pomodoro) {
       switch (state.round) {
         case PomodoroRound.focus:
-          phase = '집중 시간 (${state.currentRound}/${state.settings.totalRounds}) - 일시정지';
+          phase =
+              '집중 시간 (${state.currentRound}/${state.settings.totalRounds}) - 일시정지';
           break;
         case PomodoroRound.shortBreak:
           phase = '짧은 휴식 - 일시정지';
@@ -739,10 +775,10 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState appState) {
-    super.didChangeAppLifecycleState(appState);
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
 
-    switch (appState) {
+    switch (state) {
       case AppLifecycleState.resumed:
         print('📱 앱 복원됨 - 시간 동기화 시작');
         _syncTimerOnResume();
@@ -750,7 +786,7 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
         print('📱 앱 백그라운드로 이동');
-        if (state.status == TimerStatus.running) {
+        if (this.state.status == TimerStatus.running) {
           print('   타이머 실행 중 - 상태 저장');
           _saveState();
         }
@@ -770,8 +806,12 @@ class TimerNotifier extends StateNotifier<TimerState> with WidgetsBindingObserve
 
     print('🔄 시간 동기화 중');
     print('   현재 시간: ${now.hour}:${now.minute}:${now.second}');
-    print('   목표 시간: ${_targetEndTime!.hour}:${_targetEndTime!.minute}:${_targetEndTime!.second}');
-    print('   남은 시간: ${remainingTime.inSeconds}초 (${remainingTime.inMilliseconds}ms)');
+    print(
+      '   목표 시간: ${_targetEndTime!.hour}:${_targetEndTime!.minute}:${_targetEndTime!.second}',
+    );
+    print(
+      '   남은 시간: ${remainingTime.inSeconds}초 (${remainingTime.inMilliseconds}ms)',
+    );
 
     if (remainingTime.isNegative || remainingTime.inSeconds <= 0) {
       // 백그라운드에서 타이머가 완료됨

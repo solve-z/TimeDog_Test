@@ -4,7 +4,7 @@ import 'package:timedog_test/common/constant/app_constants.dart';
 import '../../screen/main/tab/todo/todo_provider.dart';
 import '../../screen/main/tab/todo/category_order_provider.dart';
 import '../../screen/main/tab/todo/vo/vo_todo_item.dart';
-import '../util/category_utils.dart';
+import '../utils/category_utils.dart';
 import 'd_add_todo.dart';
 
 class TodoSelectionDialog extends ConsumerStatefulWidget {

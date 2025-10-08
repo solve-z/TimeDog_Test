@@ -33,7 +33,10 @@ class TodoItemVo {
 
   // 총 집중 시간 (분 단위)
   int get totalFocusTimeInMinutes {
-    return focusTimeRecords.fold(0, (sum, record) => sum + record.focusDurationInMinutes);
+    return focusTimeRecords.fold(
+      0,
+      (sum, record) => sum + record.focusDurationInMinutes,
+    );
   }
 
   // 이동된 할일인지 확인
@@ -94,7 +97,8 @@ class TodoItemVo {
       'updatedAt': updatedAt.toIso8601String(),
       'isCompleted': isCompleted,
       'completedAt': completedAt?.toIso8601String(),
-      'focusTimeRecords': focusTimeRecords.map((record) => record.toJson()).toList(),
+      'focusTimeRecords':
+          focusTimeRecords.map((record) => record.toJson()).toList(),
       'movedToDate': movedToDate?.toIso8601String(),
     };
   }
@@ -112,11 +116,18 @@ class TodoItemVo {
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
       isCompleted: json['isCompleted'],
-      completedAt: json['completedAt'] != null ? DateTime.parse(json['completedAt']) : null,
-      focusTimeRecords: (json['focusTimeRecords'] as List)
-          .map((record) => FocusTimeRecord.fromJson(record))
-          .toList(),
-      movedToDate: json['movedToDate'] != null ? DateTime.parse(json['movedToDate']) : null,
+      completedAt:
+          json['completedAt'] != null
+              ? DateTime.parse(json['completedAt'])
+              : null,
+      focusTimeRecords:
+          (json['focusTimeRecords'] as List)
+              .map((record) => FocusTimeRecord.fromJson(record))
+              .toList(),
+      movedToDate:
+          json['movedToDate'] != null
+              ? DateTime.parse(json['movedToDate'])
+              : null,
     );
   }
 }
@@ -147,9 +158,9 @@ class FocusTimeRecord {
     final mins = minutes % 60;
 
     if (hours > 0) {
-      return '${hours}시간 ${mins}분';
+      return '$hours시간 $mins분';
     } else {
-      return '${mins}분';
+      return '$mins분';
     }
   }
 
@@ -177,7 +188,4 @@ class FocusTimeRecord {
   }
 }
 
-enum FocusType {
-  pomodoro,
-  stopwatch,
-}
+enum FocusType { pomodoro, stopwatch }

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../screen/main/tab/todo/todo_provider.dart';
 import '../../screen/main/tab/todo/category_order_provider.dart';
 import '../../screen/main/tab/todo/category_provider.dart';
-import '../util/category_utils.dart';
+import '../utils/category_utils.dart';
 
 class CategorySelectionDialog extends ConsumerStatefulWidget {
   final String? currentCategory;
@@ -35,17 +35,18 @@ class _CategorySelectionDialogState
     );
 
     // 보관되지 않은 카테고리만 필터링
-    final categories = allCategories.where((cat) {
-      try {
-        final categoryVo = categoryState.categories.firstWhere(
-          (c) => c.name == cat['name'],
-        );
-        return !categoryVo.isArchived;
-      } catch (e) {
-        // 카테고리가 없으면 활성으로 간주
-        return true;
-      }
-    }).toList();
+    final categories =
+        allCategories.where((cat) {
+          try {
+            final categoryVo = categoryState.categories.firstWhere(
+              (c) => c.name == cat['name'],
+            );
+            return !categoryVo.isArchived;
+          } catch (e) {
+            // 카테고리가 없으면 활성으로 간주
+            return true;
+          }
+        }).toList();
 
     return Dialog(
       backgroundColor: Colors.white,
@@ -134,31 +135,33 @@ class _CategorySelectionDialogState
                           ),
                         ),
                       );
-                    }).toList(),
+                    }),
 
                     // 새 카테고리 추가 버튼
                     GestureDetector(
                       onTap: () async {
+                        final navigator = Navigator.of(context);
                         final result = await _showNewCategoryDialog();
-                        if (result != null) {
-                          // 새 카테고리를 CategoryProvider에 추가
-                          await ref
-                              .read(categoryProvider.notifier)
-                              .ensureCategoryExists(
-                                result['name'] as String,
-                                result['color'] as Color,
-                                (result['color'] as Color).withOpacity(0.8),
-                              );
 
-                          // 새 카테고리를 순서에 추가
-                          await ref
-                              .read(categoryOrderProvider.notifier)
-                              .addCategoryToOrder(result['name'] as String);
+                        if (!mounted || result == null) return;
 
-                          Navigator.of(context).pop({
-                            result['name'] as String: result['color'] as Color,
-                          });
-                        }
+                        // 새 카테고리를 CategoryProvider에 추가
+                        await ref
+                            .read(categoryProvider.notifier)
+                            .ensureCategoryExists(
+                              result['name'] as String,
+                              result['color'] as Color,
+                              (result['color'] as Color).withOpacity(0.8),
+                            );
+
+                        // 새 카테고리를 순서에 추가
+                        await ref
+                            .read(categoryOrderProvider.notifier)
+                            .addCategoryToOrder(result['name'] as String);
+
+                        navigator.pop({
+                          result['name'] as String: result['color'] as Color,
+                        });
                       },
                       child: Container(
                         width: double.infinity,
@@ -375,27 +378,36 @@ class _CategorySelectionDialogState
                                     if (categoryController.text
                                         .trim()
                                         .isNotEmpty) {
-                                      final newName = categoryController.text.trim();
+                                      final newName =
+                                          categoryController.text.trim();
 
                                       // 중복 검사
-                                      final categoryState = ref.read(categoryProvider);
-                                      final existingCategory = categoryState.categories
-                                          .where((c) => c.name == newName)
-                                          .firstOrNull;
+                                      final categoryState = ref.read(
+                                        categoryProvider,
+                                      );
+                                      final existingCategory =
+                                          categoryState.categories
+                                              .where((c) => c.name == newName)
+                                              .firstOrNull;
 
                                       if (existingCategory != null) {
                                         // 중복된 카테고리가 있음
                                         Navigator.of(context).pop();
 
-                                        final statusMessage = existingCategory.isArchived
-                                            ? '보관함에 "$newName" 카테고리가 이미 존재합니다.'
-                                            : '"$newName" 카테고리가 이미 존재합니다.';
+                                        final statusMessage =
+                                            existingCategory.isArchived
+                                                ? '보관함에 "$newName" 카테고리가 이미 존재합니다.'
+                                                : '"$newName" 카테고리가 이미 존재합니다.';
 
-                                        ScaffoldMessenger.of(context).showSnackBar(
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
                                           SnackBar(
                                             content: Text(
                                               statusMessage,
-                                              style: const TextStyle(fontFamily: 'OmyuPretty'),
+                                              style: const TextStyle(
+                                                fontFamily: 'OmyuPretty',
+                                              ),
                                             ),
                                             backgroundColor: Colors.red,
                                           ),

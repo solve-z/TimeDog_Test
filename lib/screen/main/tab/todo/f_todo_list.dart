@@ -65,9 +65,9 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
       onTap:
           isClickable ? () => widget.onCategorySelected!(categoryName) : null,
       child: Container(
-        margin: EdgeInsets.all(2), // 테두리 공간 미리 확보
-        padding: EdgeInsets.symmetric(
-          horizontal: widget.isCompactMode ? 4 : 8,
+        margin: const EdgeInsets.all(2), // 테두리 공간 미리 확보
+        padding: const EdgeInsets.symmetric(
+          horizontal: 4,
           vertical: 6,
         ),
         decoration: BoxDecoration(
@@ -97,7 +97,7 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
               child: Text(
                 categoryName,
                 style: TextStyle(
-                  fontSize: widget.isCompactMode ? 14 : 16,
+                  fontSize: 14,
                   fontWeight:
                       isSelected && isClickable
                           ? FontWeight.w700
@@ -107,8 +107,8 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
               ),
             ),
             const SizedBox(width: 8),
+            // 진행바 (일반 모드에서만 표시)
             if (!widget.isCompactMode) ...[
-              // 진행바 (일반 모드만)
               Container(
                 width: 60,
                 height: 10,
@@ -128,12 +128,12 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 8),
             ],
             // 시간 뱃지
             Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: widget.isCompactMode ? 6 : 12,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 6,
                 vertical: 4,
               ),
               decoration: BoxDecoration(
@@ -146,7 +146,7 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
               child: Text(
                 totalTime,
                 style: TextStyle(
-                  fontSize: widget.isCompactMode ? 10 : 12,
+                  fontSize: 10,
                   fontWeight:
                       isSelected && isClickable
                           ? FontWeight.w700
@@ -182,19 +182,19 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
               // 이동된 할일은 화살표 아이콘, 아니면 체크박스
               if (todo.isMoved)
                 Container(
-                  width: widget.isCompactMode ? 32 : 40,
-                  height: widget.isCompactMode ? 32 : 40,
+                  width: 32,
+                  height: 32,
                   alignment: Alignment.center,
                   child: Icon(
                     Icons.arrow_forward,
-                    size: widget.isCompactMode ? 16 : 20,
+                    size: 16,
                     color: Colors.grey.shade500,
                   ),
                 )
               else
                 SizedBox(
-                  width: widget.isCompactMode ? 32 : 40,
-                  height: widget.isCompactMode ? 32 : 40,
+                  width: 32,
+                  height: 32,
                   child: Checkbox(
                     value: todo.isCompleted,
                     onChanged: (value) async {
@@ -204,10 +204,7 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
                     },
                     activeColor: AppColors.primary,
                     side: BorderSide(color: Colors.grey.shade400),
-                    materialTapTargetSize:
-                        widget.isCompactMode
-                            ? MaterialTapTargetSize.shrinkWrap
-                            : MaterialTapTargetSize.padded,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
               Expanded(
@@ -217,7 +214,7 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
                     Text(
                       todo.title,
                       style: TextStyle(
-                        fontSize: widget.isCompactMode ? 12 : 14,
+                        fontSize: 12,
                         decoration:
                             todo.isCompleted
                                 ? TextDecoration.lineThrough
@@ -232,14 +229,14 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                     ),
-                    // 이동된 날짜 표시
+                    // 이동된 날짜 표시 (일반 모드에서만 표시)
                     if (todo.movedToDate != null && !widget.isCompactMode)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
                           '${todo.movedToDate!.month}/${todo.movedToDate!.day}로 이동됨',
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: 10,
                             color: Colors.grey.shade600,
                           ),
                         ),
@@ -247,11 +244,12 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
                   ],
                 ),
               ),
+              // 시간 표시 (일반 모드에서만 표시)
               if (!widget.isCompactMode) ...[
                 const SizedBox(width: 8),
                 Text(
                   _formatTotalTime(todo.totalFocusTimeInMinutes),
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: const TextStyle(fontSize: 11, color: Colors.grey),
                 ),
               ],
               PopupMenuButton<String>(
@@ -275,10 +273,10 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
                         ),
                       ),
                     ],
-                icon: Icon(
+                icon: const Icon(
                   Icons.more_vert,
                   color: Colors.grey,
-                  size: widget.isCompactMode ? 16 : 24,
+                  size: 16,
                 ),
               ),
             ],

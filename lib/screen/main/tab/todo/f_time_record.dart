@@ -20,7 +20,6 @@ class TimeRecordFragment extends StatefulWidget {
 }
 
 class _TimeRecordFragmentState extends State<TimeRecordFragment> {
-
   final List<String> timeSlots = [
     '6',
     '7',
@@ -66,10 +65,9 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
     }
   }
 
-
   Widget _buildTimeGrid() {
     return Container(
-      clipBehavior: Clip.antiAlias,
+      clipBehavior: Clip.none,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(12),
@@ -80,23 +78,25 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
       child: Column(
         children: [
           Expanded(
-            child: widget.shrinkWrap
-                ? Expanded(
-                    child: Column(
-                      children: timeSlots.asMap().entries.map((entry) {
-                        return Expanded(
-                          child: _buildTimeRow(entry.value, entry.key),
-                        );
-                      }).toList(),
+            child:
+                widget.shrinkWrap
+                    ? Expanded(
+                      child: Column(
+                        children:
+                            timeSlots.asMap().entries.map((entry) {
+                              return Expanded(
+                                child: _buildTimeRow(entry.value, entry.key),
+                              );
+                            }).toList(),
+                      ),
+                    )
+                    : ListView.builder(
+                      physics: widget.physics,
+                      itemCount: timeSlots.length,
+                      itemBuilder: (context, index) {
+                        return _buildTimeRow(timeSlots[index], index);
+                      },
                     ),
-                  )
-                : ListView.builder(
-                    physics: widget.physics,
-                    itemCount: timeSlots.length,
-                    itemBuilder: (context, index) {
-                      return _buildTimeRow(timeSlots[index], index);
-                    },
-                  ),
           ),
         ],
       ),
@@ -148,8 +148,13 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
             return Expanded(
               child: GestureDetector(
                 onTap: () {
-                  if (progressData != null && progressData.todo != null && progressData.focusRecord != null) {
-                    _showFocusRecordDialog(progressData.todo!, progressData.focusRecord!);
+                  if (progressData != null &&
+                      progressData.todo != null &&
+                      progressData.focusRecord != null) {
+                    _showFocusRecordDialog(
+                      progressData.todo!,
+                      progressData.focusRecord!,
+                    );
                   }
                 },
                 child: Container(
@@ -188,7 +193,8 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
     for (final todo in widget.todos) {
       // 카테고리 필터링: 선택된 카테고리가 있으면 해당 카테고리만 표시
       final todoCategory = todo.category ?? '기타';
-      if (widget.selectedCategory != null && widget.selectedCategory != todoCategory) {
+      if (widget.selectedCategory != null &&
+          widget.selectedCategory != todoCategory) {
         continue; // 선택된 카테고리가 아니면 건너뛰기
       }
 
@@ -204,12 +210,15 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
       }
     }
 
-    if (maxProgress > 0 && resultColor != null && selectedTodo != null && selectedRecord != null) {
+    if (maxProgress > 0 &&
+        resultColor != null &&
+        selectedTodo != null &&
+        selectedRecord != null) {
       return CellProgressData(
         progress: maxProgress,
         color: resultColor,
         todo: selectedTodo,
-        focusRecord: selectedRecord
+        focusRecord: selectedRecord,
       );
     }
     return null;
@@ -276,118 +285,126 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
   void _showFocusRecordDialog(TodoItemVo todo, FocusTimeRecord record) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text(
-          '집중 기록 정보',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Text(
+              '집중 기록 정보',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: todo.accentColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '할일: ${todo.title}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  '카테고리: ${todo.category ?? "기타"}',
+                  style: const TextStyle(fontSize: 14, color: Colors.black54),
+                ),
+                const SizedBox(height: 8),
+                if (todo.description != null &&
+                    todo.description!.isNotEmpty) ...[
+                  Text(
+                    '설명: ${todo.description}',
+                    style: const TextStyle(fontSize: 14, color: Colors.black54),
+                  ),
+                  const SizedBox(height: 8),
+                ],
                 Container(
-                  width: 12,
-                  height: 12,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 12,
+                  ),
                   decoration: BoxDecoration(
-                    color: todo.accentColor,
-                    shape: BoxShape.circle,
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        '집중 시간: ${record.formattedDuration}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${_formatTime(record.startTime)} ~ ${_formatTime(record.endTime)}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '할일: ${todo.title}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
+                const SizedBox(height: 8),
+                Text(
+                  '집중 유형: ${record.focusType == FocusType.pomodoro ? "포모도로" : "스톱워치"}',
+                  style: const TextStyle(fontSize: 14, color: Colors.black54),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Text(
-              '카테고리: ${todo.category ?? "기타"}',
-              style: const TextStyle(fontSize: 14, color: Colors.black54),
-            ),
-            const SizedBox(height: 8),
-            if (todo.description != null && todo.description!.isNotEmpty) ...[
-              Text(
-                '설명: ${todo.description}',
-                style: const TextStyle(fontSize: 14, color: Colors.black54),
-              ),
-              const SizedBox(height: 8),
-            ],
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    '집중 시간: ${record.formattedDuration}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+            actions: [
+              Center(
+                child: Container(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey.shade200,
+                      foregroundColor: Colors.black87,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      '닫기',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${_formatTime(record.startTime)} ~ ${_formatTime(record.endTime)}',
-                    style: const TextStyle(fontSize: 14, color: Colors.black54),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '집중 유형: ${record.focusType == FocusType.pomodoro ? "포모도로" : "스톱워치"}',
-              style: const TextStyle(fontSize: 14, color: Colors.black54),
-            ),
-          ],
-        ),
-        actions: [
-          Center(
-            child: Container(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey.shade200,
-                  foregroundColor: Colors.black87,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text(
-                  '닫기',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
     );
   }
 

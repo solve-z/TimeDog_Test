@@ -5,15 +5,21 @@ class TimeRecordFragment extends StatefulWidget {
   final List<TodoItemVo> todos;
   final ScrollPhysics? physics;
   final bool shrinkWrap;
+  final String? selectedCategory; // 외부에서 전달받는 선택된 카테고리
 
-  const TimeRecordFragment({super.key, required this.todos, this.physics, this.shrinkWrap = false});
+  const TimeRecordFragment({
+    super.key,
+    required this.todos,
+    this.physics,
+    this.shrinkWrap = false,
+    this.selectedCategory,
+  });
 
   @override
   State<TimeRecordFragment> createState() => _TimeRecordFragmentState();
 }
 
 class _TimeRecordFragmentState extends State<TimeRecordFragment> {
-  String? _selectedCategory; // 선택된 카테고리 (null이면 전체 표시)
 
   final List<String> timeSlots = [
     '6',
@@ -43,40 +49,7 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
   ];
 
   String _getTimeLabel(int index) {
-    final time = timeSlots[index];
-    if (index == 6) return '🌞$time'; // 정오 12시
-    if (index == 18) return '🌙$time'; // 자정 12시
-    return time;
-  }
-
-  // 텍스트를 세로로 배치하기 위해 각 글자 사이에 개행 추가
-  String _formatVerticalText(String text) {
-    return text.split('').join('\n');
-  }
-
-  // 카테고리 텍스트 포맷팅 (너비가 늘어났으므로 2줄로 표시)
-  String _formatCategoryText(String text) {
-    if (text.length <= 4) {
-      return text;
-    } else if (text.length <= 8) {
-      // 4글자씩 나누어 2줄로
-      int mid = (text.length / 2).ceil();
-      return text.substring(0, mid) + '\n' + text.substring(mid);
-    } else {
-      // 8글자 초과시 7글자까지 표시하고 ...
-      return text.substring(0, 3) + '\n' + text.substring(3, 6) + '...';
-    }
-  }
-
-  // 카테고리 이름 길이에 따른 폰트 크기 조정
-  double _getCategoryFontSize(String text) {
-    if (text.length <= 4) {
-      return 10.0;
-    } else if (text.length <= 8) {
-      return 9.0;
-    } else {
-      return 8.0;
-    }
+    return timeSlots[index];
   }
 
   @override
@@ -85,196 +58,14 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
       // shrinkWrap이 true일 때는 고정 높이 사용
       return SizedBox(
         height: 700, // 충분한 높이 설정
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildCategoryList(),
-            Expanded(child: _buildTimeGrid()),
-          ],
-        ),
+        child: _buildTimeGrid(),
       );
     } else {
       // 기본 구조
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildCategoryList(),
-          Expanded(child: _buildTimeGrid()),
-        ],
-      );
+      return _buildTimeGrid();
     }
   }
 
-  Widget _buildCategoryList() {
-    // 카테고리별로 그룹화
-    Map<String, List<TodoItemVo>> grouped = {};
-    for (var todo in widget.todos) {
-      String category = todo.category ?? '기타';
-      if (!grouped.containsKey(category)) {
-        grouped[category] = [];
-      }
-      grouped[category]!.add(todo);
-    }
-
-    return SizedBox(
-      width: 30,
-      child: widget.shrinkWrap
-          ? SingleChildScrollView(
-              child: Column(
-                children: [
-                  const SizedBox(height: 8),
-                  ...grouped.entries.map((entry) {
-                    String categoryName = entry.key;
-                    List<TodoItemVo> todos = entry.value;
-                    Color categoryColor = todos.first.color;
-                    Color accentColor = todos.first.accentColor;
-
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          if (_selectedCategory == categoryName) {
-                            _selectedCategory = null;
-                          } else {
-                            _selectedCategory = categoryName;
-                          }
-                        });
-                      },
-                      child: Container(
-                        height: 80,
-                        margin: const EdgeInsets.symmetric(vertical: 5),
-                        decoration: BoxDecoration(
-                          color: _selectedCategory == categoryName
-                              ? categoryColor.withOpacity(0.7)
-                              : categoryColor.withOpacity(0.1),
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(8),
-                            bottomLeft: Radius.circular(8),
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            Container(
-                              width: double.infinity,
-                              height: 12,
-                              decoration: BoxDecoration(
-                                color: accentColor,
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(8),
-                                  topRight: Radius.circular(8),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
-                                  child: Text(
-                                    _formatCategoryText(categoryName),
-                                    style: TextStyle(
-                                      color: _selectedCategory == categoryName
-                                          ? Colors.black
-                                          : const Color(0xFF303030),
-                                      fontSize: _getCategoryFontSize(categoryName),
-                                      fontWeight: _selectedCategory == categoryName
-                                          ? FontWeight.w600
-                                          : FontWeight.w500,
-                                      height: 1.1,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }),
-                  const SizedBox(height: 8),
-                ],
-              ),
-            )
-          : ListView(
-              physics: widget.physics,
-              children: [
-          const SizedBox(height: 8),
-          ...grouped.entries.map((entry) {
-            String categoryName = entry.key;
-            List<TodoItemVo> todos = entry.value;
-            Color categoryColor = todos.first.color;
-            Color accentColor = todos.first.accentColor;
-
-            return GestureDetector(
-              onTap: () {
-                setState(() {
-                  // 같은 카테고리를 다시 클릭하면 전체 보기로 변경
-                  if (_selectedCategory == categoryName) {
-                    _selectedCategory = null;
-                  } else {
-                    _selectedCategory = categoryName;
-                  }
-                });
-              },
-              child: Container(
-                height: 80,
-                margin: const EdgeInsets.symmetric(vertical: 5),
-                decoration: BoxDecoration(
-                  color: _selectedCategory == categoryName
-                    ? categoryColor.withOpacity(0.7)  // 선택된 카테고리는 더 진한 색
-                    : categoryColor.withOpacity(0.1),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(8),
-                    bottomLeft: Radius.circular(8),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: accentColor,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(8),
-                          topRight: Radius.circular(8),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
-                          child: Text(
-                            _formatCategoryText(categoryName),
-                            style: TextStyle(
-                              color: _selectedCategory == categoryName
-                                ? Colors.black
-                                : const Color(0xFF303030),
-                              fontSize: _getCategoryFontSize(categoryName),
-                              fontWeight: _selectedCategory == categoryName
-                                ? FontWeight.w600
-                                : FontWeight.w500,
-                              height: 1.1,
-                            ),
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
-                const SizedBox(height: 8),
-              ],
-      ),
-    );
-  }
 
   Widget _buildTimeGrid() {
     return Container(
@@ -324,28 +115,30 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
       height: widget.shrinkWrap ? null : 28, // shrinkWrap일 때는 높이 제한 없음
       child: Row(
         children: [
-          Container(
-            width: 42,
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(color: const Color(0xFF656565), width: 1),
-                left: BorderSide(color: const Color(0xFF656565), width: 1),
-                right: BorderSide(color: const Color(0xFF656565), width: 1),
-                bottom:
-                    timeIndex == timeSlots.length - 1
-                        ? BorderSide(color: const Color(0xFF656565), width: 1)
-                        : BorderSide.none,
+          Expanded(
+            flex: 1,
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: const Color(0xFF656565), width: 1),
+                  left: BorderSide(color: const Color(0xFF656565), width: 1),
+                  right: BorderSide(color: const Color(0xFF656565), width: 1),
+                  bottom:
+                      timeIndex == timeSlots.length - 1
+                          ? BorderSide(color: const Color(0xFF656565), width: 1)
+                          : BorderSide.none,
+                ),
+                borderRadius: borderRadius,
               ),
-              borderRadius: borderRadius,
-            ),
-            child: Center(
-              child: Text(
-                _getTimeLabel(timeIndex),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade700,
-                  fontWeight: FontWeight.w500,
+              child: Center(
+                child: Text(
+                  _getTimeLabel(timeIndex),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade700,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ),
@@ -395,7 +188,7 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
     for (final todo in widget.todos) {
       // 카테고리 필터링: 선택된 카테고리가 있으면 해당 카테고리만 표시
       final todoCategory = todo.category ?? '기타';
-      if (_selectedCategory != null && _selectedCategory != todoCategory) {
+      if (widget.selectedCategory != null && widget.selectedCategory != todoCategory) {
         continue; // 선택된 카테고리가 아니면 건너뛰기
       }
 

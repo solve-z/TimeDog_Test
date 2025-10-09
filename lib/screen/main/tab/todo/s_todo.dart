@@ -16,6 +16,7 @@ class TodoScreen extends ConsumerStatefulWidget {
 class _TodoScreenState extends ConsumerState<TodoScreen> {
   int _viewIndex = 0; // 0: 할일리스트, 1: 타임레코드
   DateTime _selectedDate = DateTime.now(); // 선택된 날짜
+  String? _selectedCategory; // 선택된 카테고리 (타임레코드 필터링용)
 
   @override
   Widget build(BuildContext context) {
@@ -51,12 +52,21 @@ class _TodoScreenState extends ConsumerState<TodoScreen> {
           // 메인 컨텐츠 (할일 리스트 or 타임 레코드)
           SliverToBoxAdapter(
             child: Container(
-              margin: EdgeInsets.symmetric(
-                horizontal: _viewIndex == 0 ? 24 : 48,
-              ),
+              margin: const EdgeInsets.symmetric(horizontal: 8),
               child: TodoCurrentViewFragment(
                 viewIndex: _viewIndex,
                 selectedDate: _selectedDate,
+                selectedCategory: _selectedCategory,
+                onCategorySelected: (categoryName) {
+                  setState(() {
+                    // 같은 카테고리를 다시 클릭하면 전체 보기로 변경
+                    if (_selectedCategory == categoryName) {
+                      _selectedCategory = null;
+                    } else {
+                      _selectedCategory = categoryName;
+                    }
+                  });
+                },
               ),
             ),
           ),

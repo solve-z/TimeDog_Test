@@ -8,12 +8,18 @@ class TodoListFragment extends ConsumerStatefulWidget {
   final List<TodoItemVo>? filteredTodos; // 필터된 할일 목록 (선택적)
   final ScrollPhysics? physics; // 스크롤 물리학 설정
   final bool shrinkWrap; // 내용 크기에 맞게 조정
+  final bool isCompactMode; // 분할 뷰를 위한 컴팩트 모드
+  final Function(String?)? onCategorySelected; // 카테고리 선택 콜백
+  final String? selectedCategory; // 현재 선택된 카테고리
 
   const TodoListFragment({
     super.key,
     this.filteredTodos,
     this.physics,
     this.shrinkWrap = false,
+    this.isCompactMode = false,
+    this.onCategorySelected,
+    this.selectedCategory,
   });
 
   @override
@@ -49,57 +55,107 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
     // 카테고리의 대표 색상 (첫 번째 할일의 색상 사용)
     Color categoryColor = todos.isNotEmpty ? todos.first.color : Colors.grey;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          Container(
-            width: 4,
-            height: 20,
-            decoration: BoxDecoration(
-              color: categoryColor,
-              borderRadius: BorderRadius.circular(2),
-            ),
+    // 선택된 카테고리인지 확인
+    bool isSelected = widget.selectedCategory == categoryName;
+    // 분할 뷰(컴팩트 모드)일 때만 클릭 가능
+    bool isClickable =
+        widget.isCompactMode && widget.onCategorySelected != null;
+
+    return GestureDetector(
+      onTap:
+          isClickable ? () => widget.onCategorySelected!(categoryName) : null,
+      child: Container(
+        margin: EdgeInsets.all(2), // 테두리 공간 미리 확보
+        padding: EdgeInsets.symmetric(
+          horizontal: widget.isCompactMode ? 4 : 8,
+          vertical: 6,
+        ),
+        decoration: BoxDecoration(
+          color:
+              isSelected && isClickable
+                  ? categoryColor.withOpacity(0.2)
+                  : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color:
+                isSelected && isClickable ? categoryColor : Colors.transparent,
+            width: 2,
           ),
-          const SizedBox(width: 12),
-          Text(
-            categoryName,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-          ),
-          const Spacer(),
-          // 진행바 추가
-          Container(
-            width: 60,
-            height: 10,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: Colors.grey.shade300, width: 0.5),
-              borderRadius: BorderRadius.circular(1),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 4,
+              height: 20,
+              decoration: BoxDecoration(
+                color: categoryColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-            child: FractionallySizedBox(
-              alignment: Alignment.centerLeft,
-              widthFactor: progress,
-              child: Container(
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                categoryName,
+                style: TextStyle(
+                  fontSize: widget.isCompactMode ? 14 : 16,
+                  fontWeight:
+                      isSelected && isClickable
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 8),
+            if (!widget.isCompactMode) ...[
+              // 진행바 (일반 모드만)
+              Container(
+                width: 60,
+                height: 10,
                 decoration: BoxDecoration(
-                  color: categoryColor,
-                  borderRadius: BorderRadius.circular(2),
+                  color: Colors.white,
+                  border: Border.all(color: Colors.grey.shade300, width: 0.5),
+                  borderRadius: BorderRadius.circular(1),
+                ),
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: progress,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: categoryColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+            ],
+            // 시간 뱃지
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: widget.isCompactMode ? 6 : 12,
+                vertical: 4,
+              ),
+              decoration: BoxDecoration(
+                color:
+                    isSelected && isClickable
+                        ? categoryColor.withOpacity(0.5)
+                        : categoryColor.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                totalTime,
+                style: TextStyle(
+                  fontSize: widget.isCompactMode ? 10 : 12,
+                  fontWeight:
+                      isSelected && isClickable
+                          ? FontWeight.w700
+                          : FontWeight.w500,
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: categoryColor.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              totalTime,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -126,25 +182,33 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
               // 이동된 할일은 화살표 아이콘, 아니면 체크박스
               if (todo.isMoved)
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: widget.isCompactMode ? 32 : 40,
+                  height: widget.isCompactMode ? 32 : 40,
                   alignment: Alignment.center,
                   child: Icon(
                     Icons.arrow_forward,
-                    size: 20,
+                    size: widget.isCompactMode ? 16 : 20,
                     color: Colors.grey.shade500,
                   ),
                 )
               else
-                Checkbox(
-                  value: todo.isCompleted,
-                  onChanged: (value) async {
-                    await ref
-                        .read(todoProvider.notifier)
-                        .toggleTodoComplete(todo.id);
-                  },
-                  activeColor: AppColors.primary,
-                  side: BorderSide(color: Colors.grey.shade400),
+                SizedBox(
+                  width: widget.isCompactMode ? 32 : 40,
+                  height: widget.isCompactMode ? 32 : 40,
+                  child: Checkbox(
+                    value: todo.isCompleted,
+                    onChanged: (value) async {
+                      await ref
+                          .read(todoProvider.notifier)
+                          .toggleTodoComplete(todo.id);
+                    },
+                    activeColor: AppColors.primary,
+                    side: BorderSide(color: Colors.grey.shade400),
+                    materialTapTargetSize:
+                        widget.isCompactMode
+                            ? MaterialTapTargetSize.shrinkWrap
+                            : MaterialTapTargetSize.padded,
+                  ),
                 ),
               Expanded(
                 child: Column(
@@ -153,7 +217,7 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
                     Text(
                       todo.title,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: widget.isCompactMode ? 12 : 14,
                         decoration:
                             todo.isCompleted
                                 ? TextDecoration.lineThrough
@@ -165,9 +229,11 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
                                     ? Colors.grey
                                     : Colors.black),
                       ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                     // 이동된 날짜 표시
-                    if (todo.movedToDate != null)
+                    if (todo.movedToDate != null && !widget.isCompactMode)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
@@ -181,12 +247,16 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
                   ],
                 ),
               ),
-              Text(
-                _formatTotalTime(todo.totalFocusTimeInMinutes),
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
+              if (!widget.isCompactMode) ...[
+                const SizedBox(width: 8),
+                Text(
+                  _formatTotalTime(todo.totalFocusTimeInMinutes),
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
               PopupMenuButton<String>(
                 offset: const Offset(-20, 40),
+                padding: EdgeInsets.zero,
                 onSelected: (value) {
                   if (value == 'delete') {
                     _showDeleteConfirmDialog(todo);
@@ -205,7 +275,11 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
                         ),
                       ),
                     ],
-                icon: const Icon(Icons.more_vert, color: Colors.grey),
+                icon: Icon(
+                  Icons.more_vert,
+                  color: Colors.grey,
+                  size: widget.isCompactMode ? 16 : 24,
+                ),
               ),
             ],
           ),

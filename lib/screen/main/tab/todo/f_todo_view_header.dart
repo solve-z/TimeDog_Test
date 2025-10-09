@@ -19,53 +19,30 @@ class TodoViewHeaderFragment extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            viewIndex == 0 ? 'Task' : 'Time Record',
+            viewIndex == 0 ? 'Task' : 'Task & Record',
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: Colors.black87,
             ),
           ),
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () => onViewChanged(0),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color:
-                        viewIndex == 0
-                            ? AppColors.primary.withOpacity(0.2)
-                            : Colors.grey.shade100,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.edit,
-                    color: viewIndex == 0 ? AppColors.primary : Colors.grey,
-                    size: 16,
-                  ),
-                ),
+          GestureDetector(
+            onTap: () => onViewChanged(viewIndex == 0 ? 1 : 0),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color:
+                    viewIndex == 1
+                        ? AppColors.primary.withOpacity(0.2)
+                        : Colors.grey.shade100,
+                shape: BoxShape.circle,
               ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: () => onViewChanged(1),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color:
-                        viewIndex == 1
-                            ? AppColors.primary.withOpacity(0.2)
-                            : Colors.grey.shade100,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.access_time,
-                    color: viewIndex == 1 ? AppColors.primary : Colors.grey,
-                    size: 16,
-                  ),
-                ),
+              child: Icon(
+                Icons.access_time,
+                color: viewIndex == 1 ? AppColors.primary : Colors.grey,
+                size: 16,
               ),
-            ],
+            ),
           ),
         ],
       ),

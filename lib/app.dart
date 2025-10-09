@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'screen/main/s_main.dart';
 import 'screen/main/tab/timer/video_controller_provider.dart';
 import 'common/constant/app_constants.dart';
@@ -14,6 +15,16 @@ class TimeDogApp extends ConsumerWidget {
 
     return MaterialApp(
       title: 'TimeDog',
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('ko', 'KR'),
+        Locale('en', 'US'),
+      ],
+      locale: const Locale('ko', 'KR'),
       theme: ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: AppColors.scaffoldBackground,

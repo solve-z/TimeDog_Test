@@ -20,9 +20,27 @@ class TodoScreen extends ConsumerStatefulWidget {
 class _TodoScreenState extends ConsumerState<TodoScreen>
     with AutomaticKeepAliveClientMixin {
   DateTime _selectedDate = DateTime.now(); // 선택된 날짜
+  late PageController _pageController;
+
+  // 기준 날짜 (2020-01-01)
+  final DateTime _baseDate = DateTime(2020, 1, 1);
 
   @override
   bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    // 초기 페이지를 오늘 날짜로 설정
+    final initialPage = _selectedDate.difference(_baseDate).inDays;
+    _pageController = PageController(initialPage: initialPage);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,54 +50,75 @@ class _TodoScreenState extends ConsumerState<TodoScreen>
     final selectedCategory = ref.watch(todoSelectedCategoryProvider);
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
+      body: Column(
+        children: [
           // 상단 고정 영역 (InfoCard + ViewHeader)
-          SliverToBoxAdapter(
-            child: Column(
-              children: [
-                TodoInfoCardFragment(
-                  selectedDate: _selectedDate,
-                  onDateChanged: (newDate) {
-                    setState(() {
-                      _selectedDate = newDate;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                TodoViewHeaderFragment(
-                  viewIndex: viewIndex,
-                  onViewChanged: (newIndex) {
-                    ref.read(todoViewIndexProvider.notifier).state = newIndex;
-                  },
-                ),
-                const SizedBox(height: 16),
-              ],
+          TodoInfoCardFragment(
+            selectedDate: _selectedDate,
+            onDateChanged: (newDate) {
+              setState(() {
+                _selectedDate = newDate;
+              });
+              // PageView도 해당 날짜로 이동
+              final newPage = newDate.difference(_baseDate).inDays;
+              _pageController.jumpToPage(newPage);
+            },
+          ),
+          const SizedBox(height: 16),
+          TodoViewHeaderFragment(
+            viewIndex: viewIndex,
+            selectedDate: _selectedDate,
+            onViewChanged: (newIndex) {
+              ref.read(todoViewIndexProvider.notifier).state = newIndex;
+            },
+            onTodayPressed: () {
+              final today = DateTime.now();
+              setState(() {
+                _selectedDate = today;
+              });
+              final todayPage = today.difference(_baseDate).inDays;
+              _pageController.jumpToPage(todayPage);
+            },
+          ),
+          const SizedBox(height: 16),
+
+          // 메인 컨텐츠 (PageView로 좌우 스크롤 가능)
+          Expanded(
+            child: PageView.builder(
+              controller: _pageController,
+              physics: const ClampingScrollPhysics(),
+              onPageChanged: (index) {
+                setState(() {
+                  _selectedDate = _baseDate.add(Duration(days: index));
+                });
+              },
+              itemBuilder: (context, index) {
+                final currentDate = _baseDate.add(Duration(days: index));
+                return ListView(
+                  physics: const ClampingScrollPhysics(),
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      child: TodoCurrentViewFragment(
+                        viewIndex: viewIndex,
+                        selectedDate: currentDate,
+                        selectedCategory: selectedCategory,
+                        onCategorySelected: (categoryName) {
+                          // 같은 카테고리를 다시 클릭하면 전체 보기로 변경
+                          if (selectedCategory == categoryName) {
+                            ref.read(todoSelectedCategoryProvider.notifier).state = null;
+                          } else {
+                            ref.read(todoSelectedCategoryProvider.notifier).state = categoryName;
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 100),
+                  ],
+                );
+              },
             ),
           ),
-
-          // 메인 컨텐츠 (할일 리스트 or 타임 레코드)
-          SliverToBoxAdapter(
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 8),
-              child: TodoCurrentViewFragment(
-                viewIndex: viewIndex,
-                selectedDate: _selectedDate,
-                selectedCategory: selectedCategory,
-                onCategorySelected: (categoryName) {
-                  // 같은 카테고리를 다시 클릭하면 전체 보기로 변경
-                  if (selectedCategory == categoryName) {
-                    ref.read(todoSelectedCategoryProvider.notifier).state = null;
-                  } else {
-                    ref.read(todoSelectedCategoryProvider.notifier).state = categoryName;
-                  }
-                },
-              ),
-            ),
-          ),
-
-          // 하단 여백 (FloatingButton 공간 확보)
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
       floatingActionButton: SizedBox(

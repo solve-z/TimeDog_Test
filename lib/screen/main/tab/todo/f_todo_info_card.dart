@@ -285,25 +285,122 @@ class _TodoInfoCardFragmentState extends ConsumerState<TodoInfoCardFragment>
 
   // 날짜 선택 다이얼로그
   void _showDatePicker() async {
-    final DateTime? picked = await showDatePicker(
+    DateTime selectedDate = widget.selectedDate;
+    // 캘린더 재생성을 위한 키
+    Key calendarKey = UniqueKey();
+
+    final DateTime? result = await showDialog<DateTime>(
       context: context,
-      initialDate: widget.selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(
-              context,
-            ).colorScheme.copyWith(primary: AppColors.primary),
-          ),
-          child: child!,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Theme(
+              data: Theme.of(context).copyWith(
+                colorScheme: ColorScheme.light(
+                  primary: AppColors.primary,
+                  onPrimary: Colors.white,
+                  surface: Colors.white,
+                  onSurface: Colors.black87,
+                ),
+                textButtonTheme: TextButtonThemeData(
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                  ),
+                ),
+                dividerColor: Colors.transparent,
+                datePickerTheme: DatePickerThemeData(
+                  backgroundColor: Colors.white,
+                  headerBackgroundColor: AppColors.primary,
+                  headerForegroundColor: Colors.white,
+                  dividerColor: Colors.transparent,
+                  dayStyle: const TextStyle(fontSize: 14),
+                  yearStyle: const TextStyle(fontSize: 14),
+                  dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return Colors.white;
+                    }
+                    if (states.contains(WidgetState.disabled)) {
+                      return Colors.grey.shade400;
+                    }
+                    return Colors.black87;
+                  }),
+                  dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return AppColors.primary;
+                    }
+                    return null;
+                  }),
+                  todayForegroundColor: WidgetStateProperty.resolveWith((
+                    states,
+                  ) {
+                    if (states.contains(WidgetState.selected)) {
+                      return Colors.white;
+                    }
+                    return AppColors.primary;
+                  }),
+                  todayBackgroundColor: WidgetStateProperty.resolveWith((
+                    states,
+                  ) {
+                    if (states.contains(WidgetState.selected)) {
+                      return AppColors.primary;
+                    }
+                    return Colors.transparent;
+                  }),
+                  todayBorder: BorderSide(color: AppColors.primary, width: 1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              child: Dialog(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 캘린더
+                      CalendarDatePicker(
+                        key: calendarKey,
+                        initialDate: selectedDate,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2030),
+                        currentDate: DateTime.now(),
+                        onDateChanged: (date) {
+                          widget.onDateChanged(date);
+                          Navigator.of(dialogContext).pop();
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      // 오늘 버튼
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            final today = DateTime.now();
+                            widget.onDateChanged(today);
+                            Navigator.of(dialogContext).pop();
+                          },
+                          icon: const Icon(Icons.today, size: 18),
+                          label: const Text('오늘'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primary,
+                            side: BorderSide(color: AppColors.primary),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
         );
       },
     );
 
-    if (picked != null && picked != widget.selectedDate) {
-      widget.onDateChanged(picked);
+    if (result != null && result != widget.selectedDate) {
+      widget.onDateChanged(result);
     }
   }
 

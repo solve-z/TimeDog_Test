@@ -23,47 +23,7 @@ class TodoCurrentViewFragment extends ConsumerStatefulWidget {
   ConsumerState<TodoCurrentViewFragment> createState() => _TodoCurrentViewFragmentState();
 }
 
-class _TodoCurrentViewFragmentState extends ConsumerState<TodoCurrentViewFragment>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<Offset> _slideAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(1.0, 0.0), // 오른쪽에서 시작
-      end: Offset.zero, // 제자리로
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOut,
-    ));
-
-    if (widget.viewIndex == 1) {
-      _animationController.forward();
-    }
-  }
-
-  @override
-  void didUpdateWidget(TodoCurrentViewFragment oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.viewIndex == 1 && oldWidget.viewIndex == 0) {
-      _animationController.forward();
-    } else if (widget.viewIndex == 0 && oldWidget.viewIndex == 1) {
-      _animationController.reverse();
-    }
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
+class _TodoCurrentViewFragmentState extends ConsumerState<TodoCurrentViewFragment> {
   @override
   Widget build(BuildContext context) {
     final todoState = ref.watch(todoProvider);
@@ -87,16 +47,11 @@ class _TodoCurrentViewFragmentState extends ConsumerState<TodoCurrentViewFragmen
         if (widget.viewIndex == 1) ...[
           const SizedBox(width: 8),
           Expanded(
-            child: ClipRect(
-              child: SlideTransition(
-                position: _slideAnimation,
-                child: TimeRecordFragment(
-                  todos: filteredTodos,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  selectedCategory: widget.selectedCategory,
-                ),
-              ),
+            child: TimeRecordFragment(
+              todos: filteredTodos,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              selectedCategory: widget.selectedCategory,
             ),
           ),
         ],

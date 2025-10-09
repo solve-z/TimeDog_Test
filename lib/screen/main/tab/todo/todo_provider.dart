@@ -27,9 +27,8 @@ class TodoNotifier extends StateNotifier<TodoState> {
         final List<dynamic> todosList = json.decode(todosJson);
         todos = todosList.map((json) => TodoItemVo.fromJson(json)).toList();
       } else {
-        // 처음 실행시 더미 데이터로 초기화
-        todos = List.from(dummyTodoItems);
-        await _saveTodos();
+        // 처음 실행시 빈 목록으로 시작
+        todos = [];
       }
 
       // 선택된 할일 복원 및 검증

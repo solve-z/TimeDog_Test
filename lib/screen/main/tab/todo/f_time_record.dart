@@ -80,15 +80,13 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
           Expanded(
             child:
                 widget.shrinkWrap
-                    ? Expanded(
-                      child: Column(
-                        children:
-                            timeSlots.asMap().entries.map((entry) {
-                              return Expanded(
-                                child: _buildTimeRow(entry.value, entry.key),
-                              );
-                            }).toList(),
-                      ),
+                    ? Column(
+                      children:
+                          timeSlots.asMap().entries.map((entry) {
+                            return Expanded(
+                              child: _buildTimeRow(entry.value, entry.key),
+                            );
+                          }).toList(),
                     )
                     : ListView.builder(
                       physics: widget.physics,
@@ -163,15 +161,26 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
                   ),
                   child:
                       progressData != null
-                          ? Align(
-                            alignment: Alignment.centerLeft,
-                            child: FractionallySizedBox(
-                              widthFactor: progressData.progress,
-                              child: Container(
-                                height: double.infinity,
-                                color: progressData.color,
-                              ),
-                            ),
+                          ? LayoutBuilder(
+                            builder: (context, constraints) {
+                              final cellWidth = constraints.maxWidth;
+                              final startPosition =
+                                  cellWidth * progressData.startOffset;
+                              final endPosition =
+                                  cellWidth * progressData.progress;
+
+                              return Stack(
+                                children: [
+                                  Positioned(
+                                    left: startPosition,
+                                    right: cellWidth - endPosition,
+                                    top: 0,
+                                    bottom: 0,
+                                    child: Container(color: progressData.color),
+                                  ),
+                                ],
+                              );
+                            },
                           )
                           : null,
                 ),
@@ -185,6 +194,7 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
 
   CellProgressData? _getCellProgressData(int timeIndex, int columnIndex) {
     double maxProgress = 0.0;
+    double resultStartOffset = 0.0;
     Color? resultColor;
     TodoItemVo? selectedTodo;
     FocusTimeRecord? selectedRecord;
@@ -199,10 +209,11 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
       }
 
       for (final record in todo.focusTimeRecords) {
-        final progress = _calculateProgress(record, timeIndex, columnIndex);
+        final cellData = _calculateCellData(record, timeIndex, columnIndex);
 
-        if (progress > maxProgress) {
-          maxProgress = progress;
+        if (cellData != null && cellData.progress > maxProgress) {
+          maxProgress = cellData.progress;
+          resultStartOffset = cellData.startOffset;
           resultColor = todo.color.withOpacity(0.7);
           selectedTodo = todo;
           selectedRecord = record;
@@ -216,30 +227,47 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
         selectedRecord != null) {
       return CellProgressData(
         progress: maxProgress,
+        startOffset: resultStartOffset,
         color: resultColor,
         todo: selectedTodo,
         focusRecord: selectedRecord,
       );
     }
+
     return null;
   }
 
-  double _calculateProgress(
+  ({double progress, double startOffset})? _calculateCellData(
     FocusTimeRecord record,
     int timeIndex,
     int columnIndex,
   ) {
     final targetHour = _getHourFromIndex(timeIndex);
-    if (targetHour == -1) return 0.0;
+    if (targetHour == -1) return null;
 
     final targetMinute = columnIndex * 10; // 0, 10, 20, 30, 40, 50
 
-    // 실제 기록의 날짜를 기준으로 슬롯 시간 계산
-    final recordDate = record.startTime;
+    // 기록의 타임라인 기준일 계산 (6시 기준)
+    final recordHour = record.startTime.hour;
+    final recordBaseDate =
+        recordHour < 6
+            ? DateTime(
+              record.startTime.year,
+              record.startTime.month,
+              record.startTime.day - 1,
+            )
+            : DateTime(
+              record.startTime.year,
+              record.startTime.month,
+              record.startTime.day,
+            );
+
+    // 슬롯 시간 계산 (0~5시는 타임라인 기준 다음날)
+    final needsNextDay = targetHour >= 0 && targetHour <= 5;
     final slotStart = DateTime(
-      recordDate.year,
-      recordDate.month,
-      recordDate.day,
+      recordBaseDate.year,
+      recordBaseDate.month,
+      recordBaseDate.day + (needsNextDay ? 1 : 0),
       targetHour,
       targetMinute,
     );
@@ -250,11 +278,18 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
     final overlapEnd = _earlierTime(record.endTime, slotEnd);
 
     if (overlapStart.isBefore(overlapEnd)) {
-      final overlapMinutes = overlapEnd.difference(overlapStart).inMinutes;
-      return (overlapMinutes / 10.0).clamp(0.0, 1.0);
+      // 슬롯 내에서 시작 위치 계산 (10% 단위로 스냅)
+      final startOffsetMinutes = overlapStart.difference(slotStart).inMinutes;
+      final startOffset = (startOffsetMinutes / 10.0).clamp(0.0, 1.0);
+
+      // 슬롯 내에서 종료 위치 계산 (10% 단위로 스냅)
+      final endOffsetMinutes = overlapEnd.difference(slotStart).inMinutes;
+      final endPosition = (endOffsetMinutes / 10.0).clamp(0.0, 1.0);
+
+      return (progress: endPosition, startOffset: startOffset);
     }
 
-    return 0.0;
+    return null;
   }
 
   DateTime _laterTime(DateTime a, DateTime b) => a.isAfter(b) ? a : b;
@@ -276,7 +311,7 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
       return index + 6; // 18~23
     } else if (index >= 18 && index < 24) {
       // 12,1,2,3,4,5 AM 다음날 (자정~새벽5시)
-      return index == 18 ? 0 : index - 17; // 12시는 0(자정), 1~5는 1~5
+      return index == 18 ? 0 : index - 18; // 12시는 0(자정), 1~5는 1~5
     }
     return -1;
   }
@@ -415,13 +450,15 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
 }
 
 class CellProgressData {
-  final double progress; // 0.0 ~ 1.0
+  final double progress; // 종료 위치 (0.0 ~ 1.0)
+  final double startOffset; // 시작 위치 (0.0 ~ 1.0)
   final Color color;
   final TodoItemVo? todo;
   final FocusTimeRecord? focusRecord;
 
   CellProgressData({
     required this.progress,
+    required this.startOffset,
     required this.color,
     this.todo,
     this.focusRecord,

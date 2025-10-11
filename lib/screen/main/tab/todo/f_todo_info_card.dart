@@ -53,11 +53,10 @@ class _TodoInfoCardFragmentState extends ConsumerState<TodoInfoCardFragment>
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      margin: const EdgeInsets.fromLTRB(8, 8, 8, 4),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade300, width: 1),
       ),
       child: Column(
         children: [
@@ -67,111 +66,139 @@ class _TodoInfoCardFragmentState extends ConsumerState<TodoInfoCardFragment>
               children: [
                 const SizedBox(width: 8),
                 // Date 앞쪽 강조선
-                Container(width: 1, color: Colors.grey.shade400),
+                Container(width: 1, color: Colors.grey.shade300),
                 Expanded(
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () => _showDatePicker(),
-                      borderRadius: BorderRadius.circular(4),
-                      child: Padding(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => _showDatePicker(),
+                            borderRadius: BorderRadius.circular(4),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Text(
+                                        'Date.',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      const Icon(
+                                        Icons.keyboard_arrow_down,
+                                        size: 10,
+                                        color: Colors.grey,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Align(
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      "${widget.selectedDate.year}.${widget.selectedDate.month.toString().padLeft(2, '0')}.${widget.selectedDate.day.toString().padLeft(2, '0')}",
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Container(width: 1, color: Colors.grey.shade300),
+                      const SizedBox(width: 8),
+                      Container(width: 1, color: Colors.grey.shade300),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Stack(
+                    children: [
+                      Padding(
                         padding: const EdgeInsets.all(8),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                const Text(
-                                  'Date.',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                const Icon(
-                                  Icons.keyboard_arrow_down,
-                                  size: 10,
-                                  color: Colors.grey,
-                                ),
-                              ],
+                            const Text(
+                              'Total Time.',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey,
+                              ),
                             ),
                             const SizedBox(height: 2),
-                            Text(
-                              "${widget.selectedDate.year}.${widget.selectedDate.month.toString().padLeft(2, '0')}.${widget.selectedDate.day.toString().padLeft(2, '0')}",
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
+                            Center(
+                              child: Consumer(
+                                builder: (context, ref, child) {
+                                  final todoState = ref.watch(todoProvider);
+                                  final filteredTodos = _getFilteredTodosByDate(
+                                    todoState.allTodos,
+                                  );
+                                  final totalMinutes = filteredTodos.fold<int>(
+                                    0,
+                                    (sum, todo) =>
+                                        sum + todo.totalFocusTimeInMinutes,
+                                  );
+                                  final totalTime = _formatTotalTime(
+                                    totalMinutes,
+                                  );
+
+                                  return Text(
+                                    totalTime,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                  ),
-                ),
-                Container(width: 1, color: Colors.grey.shade300),
-                const SizedBox(width: 8),
-                // Total Time 앞쪽 강조선
-                Container(width: 1, color: Colors.grey.shade400),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Total Time.',
-                          style: TextStyle(fontSize: 10, color: Colors.grey),
-                        ),
-                        const SizedBox(height: 2),
-                        Consumer(
-                          builder: (context, ref, child) {
-                            final todoState = ref.watch(todoProvider);
-                            final filteredTodos = _getFilteredTodosByDate(
-                              todoState.allTodos,
-                            );
-                            final totalMinutes = filteredTodos.fold<int>(
-                              0,
-                              (sum, todo) => sum + todo.totalFocusTimeInMinutes,
-                            );
-                            final totalTime = _formatTotalTime(totalMinutes);
-
-                            return Text(
-                              totalTime,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
+                      // Collapse/Expand 버튼
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        bottom: 0,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: _toggleInfoCard,
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              child: AnimatedBuilder(
+                                animation: _animation,
+                                builder: (context, child) {
+                                  return Transform.rotate(
+                                    angle:
+                                        _animation.value * 3.14159, // 180도 회전
+                                    child: Icon(
+                                      Icons.keyboard_arrow_up,
+                                      size: 18,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  );
+                                },
                               ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                // Collapse/Expand 버튼
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: _toggleInfoCard,
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      child: AnimatedBuilder(
-                        animation: _animation,
-                        builder: (context, child) {
-                          return Transform.rotate(
-                            angle: _animation.value * 3.14159, // 180도 회전
-                            child: Icon(
-                              Icons.keyboard_arrow_up,
-                              size: 18,
-                              color: Colors.grey.shade600,
                             ),
-                          );
-                        },
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ],
@@ -194,7 +221,7 @@ class _TodoInfoCardFragmentState extends ConsumerState<TodoInfoCardFragment>
                     children: [
                       const SizedBox(width: 8),
                       // Object 앞쪽 강조선
-                      Container(width: 1, color: Colors.grey.shade400),
+                      Container(width: 1, color: Colors.grey.shade300),
                       Expanded(
                         child: Material(
                           color: Colors.transparent,
@@ -224,26 +251,32 @@ class _TodoInfoCardFragmentState extends ConsumerState<TodoInfoCardFragment>
                                     ],
                                   ),
                                   const SizedBox(height: 2),
-                                  Consumer(
-                                    builder: (context, ref, child) {
-                                      ref.watch(dailyObjectiveProvider);
-                                      final objective = ref
-                                          .read(dailyObjectiveProvider.notifier)
-                                          .getObjective(widget.selectedDate);
-                                      return Text(
-                                        objective.isEmpty
-                                            ? '목표를 설정해주세요'
-                                            : objective,
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
-                                          color:
-                                              objective.isEmpty
-                                                  ? Colors.grey.shade400
-                                                  : Colors.black,
-                                        ),
-                                      );
-                                    },
+                                  Align(
+                                    alignment: Alignment.center,
+                                    child: Consumer(
+                                      builder: (context, ref, child) {
+                                        ref.watch(dailyObjectiveProvider);
+                                        final objective = ref
+                                            .read(
+                                              dailyObjectiveProvider.notifier,
+                                            )
+                                            .getObjective(widget.selectedDate);
+                                        return Text(
+                                          objective.isEmpty
+                                              ? '목표를 설정해주세요'
+                                              : objective,
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                            color:
+                                                objective.isEmpty
+                                                    ? Colors.grey.shade400
+                                                    : Colors.black,
+                                          ),
+                                        );
+                                      },
+                                    ),
                                   ),
                                 ],
                               ),

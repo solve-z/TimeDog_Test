@@ -13,21 +13,38 @@ import 'music_provider.dart';
 
 class TimerNotifier extends StateNotifier<TimerState>
     with WidgetsBindingObserver {
-  TimerNotifier(this._ref) : super(const TimerState()) {
-    _initializeState();
-    _initializeNotifications();
-    WidgetsBinding.instance.addObserver(this);
-  }
-
   final Ref _ref;
   Timer? _timer;
   DateTime? _targetEndTime;
   final NotificationService _notificationService = NotificationService();
   static const String _settingsKey = 'timer_settings';
   static const String _stateKey = 'timer_state';
+  bool _backgroundPermissionsInitialized = false;
+
+  TimerNotifier(this._ref) : super(const TimerState()) {
+    _initializeState(); // 저장된 타이머 상태 복원
+    _initializeNotifications(); // 알림 초기화
+    WidgetsBinding.instance.addObserver(this); // 생명주기 감지 등록
+  }
 
   Future<void> _initializeNotifications() async {
     await _notificationService.initialize();
+    await _initializeBackgroundPermissions();
+  }
+
+  Future<void> _initializeBackgroundPermissions() async {
+    if (_backgroundPermissionsInitialized) return;
+
+    try {
+      final hasPermission =
+          await _notificationService.requestBatteryOptimizationExemption();
+      if (!hasPermission) {
+        print('백그라운드 실행 권한이 없습니다. 앱 설정에서 배터리 최적화를 해제해주세요.');
+      }
+      _backgroundPermissionsInitialized = true;
+    } catch (e) {
+      print('백그라운드 권한 초기화 실패: $e');
+    }
   }
 
   void _initializeState() async {
@@ -45,13 +62,32 @@ class TimerNotifier extends StateNotifier<TimerState>
     if (stateJson != null) {
       try {
         final savedState = TimerState.fromJson(jsonDecode(stateJson));
-        final restoredState = _restoreTimerState(savedState, settings);
-        state = restoredState;
 
-        // 복원된 상태가 실행 중이었다면 타이머 재시작
-        if (restoredState.status == TimerStatus.running) {
-          _startTimer();
+        // 앱이 정상적으로 백그라운드에 있는지 확인
+        final isInBackground = prefs.getBool('app_in_background') ?? false;
+
+        if (isInBackground) {
+          // 백그라운드에서 복귀 → 정상 복원 (running 유지)
+          final restoredState = _restoreTimerState(savedState, settings);
+          state = restoredState;
+
+          if (restoredState.status == TimerStatus.running) {
+            _startTimer();
+          }
+        } else {
+          // 앱 재실행 → paused로 변경
+          final restoredState = _restoreTimerState(savedState, settings);
+
+          if (restoredState.status == TimerStatus.running) {
+            state = restoredState.copyWith(status: TimerStatus.paused);
+          } else {
+            state = restoredState;
+          }
         }
+
+        // 플래그 초기화
+        prefs.setBool('app_in_background', false);
+
       } catch (e) {
         print('상태 복원 실패: $e');
         state = TimerState(settings: settings, currentTime: settings.focusTime);
@@ -279,13 +315,6 @@ class TimerNotifier extends StateNotifier<TimerState>
     _saveState();
 
     try {
-      // 백그라운드 권한 확인 및 요청
-      final hasPermission =
-          await _notificationService.requestBatteryOptimizationExemption();
-      if (!hasPermission) {
-        print('백그라운드 실행 권한이 없습니다. 앱 설정에서 배터리 최적화를 해제해주세요.');
-      }
-
       // 백그라운드 실행 활성화
       final enabled = await _notificationService.enableBackgroundExecution();
       if (!enabled) {
@@ -294,11 +323,6 @@ class TimerNotifier extends StateNotifier<TimerState>
     } catch (e) {
       print('백그라운드 실행 활성화 실패: $e');
     }
-
-    // 비동기 작업으로 인한 지연을 보정하기 위해 목표 시간 재계산
-    final actualNow = DateTime.now();
-    _targetEndTime = actualNow.add(state.currentTime);
-    state = state.copyWith(endTime: _targetEndTime);
 
     AppLogger.timer.i('타이머 시작 - 현재 시간: ${state.currentTime.inSeconds}초');
     AppLogger.timer.d(
@@ -552,10 +576,14 @@ class TimerNotifier extends StateNotifier<TimerState>
       return;
     }
 
-    final endTime = DateTime.now();
+    // ✅ 정확한 완료 시각 = _targetEndTime (타이머 시작 시 계산한 목표 시각)
+    final actualEndTime = _targetEndTime ?? DateTime.now();
+    final endTime = DateTime.now();  // state.endTime용 (UI 디버그 정보)
 
     AppLogger.timer.i('========== 라운드 완료 처리 시작 ==========');
     AppLogger.timer.i('완료된 라운드: ${state.round}');
+    AppLogger.timer.d('목표 완료 시각: ${actualEndTime.hour}:${actualEndTime.minute}:${actualEndTime.second}');
+    AppLogger.timer.d('실제 처리 시각: ${endTime.hour}:${endTime.minute}:${endTime.second}');
 
     // 타이머 즉시 정지 (중복 호출 방지)
     _stopTimer();
@@ -583,10 +611,16 @@ class TimerNotifier extends StateNotifier<TimerState>
         final focusRecord = FocusTimeRecord(
           id: 'focus_${DateTime.now().millisecondsSinceEpoch}',
           startTime: state.startTime!,
-          endTime: endTime,
+          endTime: actualEndTime,  // ✅ 정확한 완료 시각 사용
           focusType: FocusType.pomodoro,
         );
         await todoNotifier.addFocusTimeToSelectedTodo(focusRecord);
+
+        AppLogger.timer.i(
+          '집중 시간 기록: ${state.startTime!.hour}:${state.startTime!.minute}:${state.startTime!.second} ~ '
+          '${actualEndTime.hour}:${actualEndTime.minute}:${actualEndTime.second} '
+          '(${focusRecord.focusDurationInMinutes}분)',
+        );
       }
 
       // roundStatusList 업데이트: 현재 라운드를 집중 완료로 표시
@@ -619,6 +653,7 @@ class TimerNotifier extends StateNotifier<TimerState>
         round: nextRound,
         currentTime: nextTime,
         endTime: endTime,
+        targetEndTime: actualEndTime,  // 목표 완료 시각 저장
         startTime: null,
         completedRounds: state.currentRound, // 집중 시간 완료 시 라운드 완료 카운트
         roundStatusList: updatedStatusList,
@@ -782,6 +817,7 @@ class TimerNotifier extends StateNotifier<TimerState>
       case AppLifecycleState.resumed:
         print('📱 앱 복원됨 - 시간 동기화 시작');
         _syncTimerOnResume();
+        _clearBackgroundFlag();
         break;
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
@@ -789,9 +825,11 @@ class TimerNotifier extends StateNotifier<TimerState>
         if (this.state.status == TimerStatus.running) {
           print('   타이머 실행 중 - 상태 저장');
           _saveState();
+          _setBackgroundFlag();
         }
         break;
       case AppLifecycleState.detached:
+        _clearBackgroundFlag();
         break;
       case AppLifecycleState.hidden:
         break;
@@ -822,7 +860,23 @@ class TimerNotifier extends StateNotifier<TimerState>
       // 남은 시간으로 상태 업데이트
       print('⏰ 남은 시간으로 업데이트됨');
       state = state.copyWith(currentTime: remainingTime);
+
+      // 타이머가 멈췄을 수 있으므로 재시작
+      if (_timer == null || !_timer!.isActive) {
+        print('⚠️ 타이머가 비활성화됨 - 재시작');
+        _startTimer();
+      }
     }
+  }
+
+  void _setBackgroundFlag() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setBool('app_in_background', true);
+  }
+
+  void _clearBackgroundFlag() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setBool('app_in_background', false);
   }
 
   @override

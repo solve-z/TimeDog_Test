@@ -29,48 +29,54 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
 
     return Scaffold(
-      appBar: isLandscape
-          ? null
-          : (_currentIndex == 0
-              ? AppBar(
-                  leading: Builder(
-                    builder: (context) => Padding(
-                      padding: const EdgeInsets.only(left: 16.0),
-                      child: IconButton(
-                        icon: SvgPicture.asset(
-                          'assets/images/icons/drawer.svg',
-                          width: 24,
-                          height: 24,
-                        ),
-                        onPressed: () {
-                          Scaffold.of(context).openDrawer();
-                        },
-                      ),
+      appBar:
+          isLandscape
+              ? null
+              : (_currentIndex == 0
+                  ? AppBar(
+                    leading: Builder(
+                      builder:
+                          (context) => Padding(
+                            padding: const EdgeInsets.only(left: 16.0),
+                            child: IconButton(
+                              icon: SvgPicture.asset(
+                                'assets/images/icons/drawer.svg',
+                                width: 24,
+                                height: 24,
+                              ),
+                              onPressed: () {
+                                Scaffold.of(context).openDrawer();
+                              },
+                            ),
+                          ),
                     ),
-                  ),
-                )
-              : AppBar(
-                  title: Text(
-                    _tabTitles[_currentIndex],
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  actions: const [AppBarActionsWidget()],
-                )),
+                  )
+                  : _currentIndex == 1
+                      ? null
+                      : AppBar(
+                          title: Text(
+                            _tabTitles[_currentIndex],
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          actions: const [AppBarActionsWidget()],
+                        )),
       drawer: _currentIndex == 0 ? const DrawerMenuWidget() : null,
       body: _screens[_currentIndex],
-      bottomNavigationBar: isLandscape
-          ? null
-          : BottomNavigationWidget(
-              currentIndex: _currentIndex,
-              onTap: (index) {
-                setState(() {
-                  _currentIndex = index;
-                });
-              },
-            ),
+      bottomNavigationBar:
+          isLandscape
+              ? null
+              : BottomNavigationWidget(
+                currentIndex: _currentIndex,
+                onTap: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                },
+              ),
     );
   }
 }

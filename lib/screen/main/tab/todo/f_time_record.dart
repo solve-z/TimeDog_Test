@@ -56,7 +56,7 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
     if (widget.shrinkWrap) {
       // shrinkWrap이 true일 때는 고정 높이 사용
       return SizedBox(
-        height: 700, // 충분한 높이 설정
+        height: 576, // 충분한 높이 설정
         child: _buildTimeGrid(),
       );
     } else {
@@ -69,10 +69,6 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
     return Container(
       clipBehavior: Clip.none,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(12),
-          bottomLeft: Radius.circular(12),
-        ),
         border: Border.all(color: Colors.grey.shade300, width: 0.5),
       ),
       child: Column(
@@ -102,40 +98,25 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
   }
 
   Widget _buildTimeRow(String time, int timeIndex) {
-    BorderRadius? borderRadius;
-    if (timeIndex == 0) {
-      borderRadius = const BorderRadius.only(topLeft: Radius.circular(12));
-    } else if (timeIndex == timeSlots.length - 1) {
-      borderRadius = const BorderRadius.only(bottomLeft: Radius.circular(12));
-    }
-
     return Container(
-      height: widget.shrinkWrap ? null : 28, // shrinkWrap일 때는 높이 제한 없음
+      height: widget.shrinkWrap ? null : 24, // shrinkWrap일 때는 높이 제한 없음
       child: Row(
         children: [
-          Expanded(
-            flex: 1,
+          // 시간 레이블 열 (정사각형)
+          SizedBox(
+            width: 24,
             child: Container(
               decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: const Color(0xFF656565), width: 1),
-                  left: BorderSide(color: const Color(0xFF656565), width: 1),
-                  right: BorderSide(color: const Color(0xFF656565), width: 1),
-                  bottom:
-                      timeIndex == timeSlots.length - 1
-                          ? BorderSide(color: const Color(0xFF656565), width: 1)
-                          : BorderSide.none,
-                ),
-                borderRadius: borderRadius,
+                border: Border.all(color: Colors.grey.shade200, width: 0.5),
               ),
               child: Center(
                 child: Text(
                   _getTimeLabel(timeIndex),
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade700,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 10,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
@@ -157,7 +138,7 @@ class _TimeRecordFragmentState extends State<TimeRecordFragment> {
                 },
                 child: Container(
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300, width: 0.5),
+                    border: Border.all(color: Colors.grey.shade200, width: 0.5),
                   ),
                   child:
                       progressData != null

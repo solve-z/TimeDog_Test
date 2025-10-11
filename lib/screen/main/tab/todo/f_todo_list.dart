@@ -66,10 +66,7 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
           isClickable ? () => widget.onCategorySelected!(categoryName) : null,
       child: Container(
         margin: const EdgeInsets.all(2), // 테두리 공간 미리 확보
-        padding: const EdgeInsets.symmetric(
-          horizontal: 4,
-          vertical: 6,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
         decoration: BoxDecoration(
           color:
               isSelected && isClickable
@@ -132,16 +129,13 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
             ],
             // 시간 뱃지
             Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 6,
-                vertical: 4,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
               decoration: BoxDecoration(
                 color:
                     isSelected && isClickable
                         ? categoryColor.withOpacity(0.5)
                         : categoryColor.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 totalTime,
@@ -161,20 +155,26 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
   }
 
   Widget _buildTodoItem(TodoItemVo todo) {
-    return GestureDetector(
+    return InkWell(
+      onTap:
+          todo.isMoved
+              ? null
+              : () async {
+                await ref
+                    .read(todoProvider.notifier)
+                    .toggleTodoComplete(todo.id);
+              },
       onLongPress:
           todo.isMoved
               ? null
               : () {
                 _showTodoContextMenu(context, todo);
               },
-      child: InkWell(
-        onTap:
-            todo.isMoved
-                ? null
-                : () {
-                  // 이동된 할일은 클릭 불가
-                },
+      splashColor: Colors.transparent,
+      highlightColor: todo.isMoved ? Colors.transparent : Colors.grey.shade100,
+      child: Container(
+        height: 36,
+        padding: const EdgeInsets.fromLTRB(12, 2, 0, 2),
         child: Opacity(
           opacity: todo.isMoved ? 0.5 : 1.0,
           child: Row(
@@ -182,103 +182,118 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
               // 이동된 할일은 화살표 아이콘, 아니면 체크박스
               if (todo.isMoved)
                 Container(
-                  width: 32,
-                  height: 32,
+                  width: 20,
+                  height: 20,
                   alignment: Alignment.center,
                   child: Icon(
                     Icons.arrow_forward,
-                    size: 16,
+                    size: 12,
                     color: Colors.grey.shade500,
                   ),
                 )
               else
-                SizedBox(
-                  width: 32,
-                  height: 32,
-                  child: Checkbox(
-                    value: todo.isCompleted,
-                    onChanged: (value) async {
-                      await ref
-                          .read(todoProvider.notifier)
-                          .toggleTodoComplete(todo.id);
-                    },
-                    activeColor: AppColors.primary,
-                    side: BorderSide(color: Colors.grey.shade400),
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                GestureDetector(
+                  onTap: () async {
+                    await ref
+                        .read(todoProvider.notifier)
+                        .toggleTodoComplete(todo.id);
+                  },
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    alignment: Alignment.center,
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: Checkbox(
+                        value: todo.isCompleted,
+                        onChanged: (value) async {
+                          await ref
+                              .read(todoProvider.notifier)
+                              .toggleTodoComplete(todo.id);
+                        },
+                        checkColor: AppColors.primary,
+                        fillColor: MaterialStateProperty.all(Colors.white),
+                        side: BorderSide(
+                          color: Colors.grey.shade400,
+                          width: 1.5,
+                        ),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
                   ),
                 ),
+              const SizedBox(width: 4),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      todo.title,
-                      style: TextStyle(
-                        fontSize: 12,
-                        decoration:
-                            todo.isCompleted
-                                ? TextDecoration.lineThrough
-                                : null,
-                        color:
-                            todo.isMoved
-                                ? Colors.grey.shade500
-                                : (todo.isCompleted
-                                    ? Colors.grey
-                                    : Colors.black),
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    todo.title,
+                    style: TextStyle(
+                      fontSize: 13,
+                      decoration:
+                          todo.isCompleted ? TextDecoration.lineThrough : null,
+                      decorationColor:
+                          todo.isCompleted ? Colors.grey.shade600 : null,
+                      color:
+                          todo.isMoved
+                              ? Colors.grey.shade500
+                              : (todo.isCompleted ? Colors.grey : Colors.black),
+                      height: 1.2,
                     ),
-                    // 이동된 날짜 표시 (일반 모드에서만 표시)
-                    if (todo.movedToDate != null && !widget.isCompactMode)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          '${todo.movedToDate!.month}/${todo.movedToDate!.day}로 이동됨',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ),
-                  ],
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
                 ),
               ),
               // 시간 표시 (일반 모드에서만 표시)
               if (!widget.isCompactMode) ...[
                 const SizedBox(width: 8),
+                if (todo.isMoved) ...[
+                  Text(
+                    '${todo.scheduledDate.month}/${todo.scheduledDate.day}로 이동',
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '•',
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade400),
+                  ),
+                  const SizedBox(width: 4),
+                ],
                 Text(
                   _formatTotalTime(todo.totalFocusTimeInMinutes),
                   style: const TextStyle(fontSize: 11, color: Colors.grey),
                 ),
               ],
-              PopupMenuButton<String>(
-                offset: const Offset(-20, 40),
-                padding: EdgeInsets.zero,
-                onSelected: (value) {
-                  if (value == 'delete') {
-                    _showDeleteConfirmDialog(todo);
-                  }
-                },
-                itemBuilder:
-                    (BuildContext context) => [
-                      const PopupMenuItem<String>(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(Icons.delete, size: 16, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text('삭제', style: TextStyle(color: Colors.red)),
-                          ],
+              if (!widget.isCompactMode)
+                PopupMenuButton<String>(
+                  offset: const Offset(-20, 40),
+                  padding: EdgeInsets.zero,
+                  onSelected: (value) {
+                    if (value == 'delete') {
+                      _showDeleteConfirmDialog(todo);
+                    }
+                  },
+                  itemBuilder:
+                      (BuildContext context) => [
+                        const PopupMenuItem<String>(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete, size: 16, color: Colors.red),
+                              SizedBox(width: 8),
+                              Text('삭제', style: TextStyle(color: Colors.red)),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                icon: const Icon(
-                  Icons.more_vert,
-                  color: Colors.grey,
-                  size: 16,
+                      ],
+                  icon: const Icon(
+                    Icons.more_vert,
+                    color: Colors.grey,
+                    size: 16,
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -728,7 +743,7 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
               return Container(
                 margin: EdgeInsets.symmetric(vertical: 8),
                 width: double.infinity,
-                height: 2,
+                height: 1,
                 color: Colors.grey.shade300,
               );
             }

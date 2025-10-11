@@ -34,6 +34,7 @@ class _TodoCurrentViewFragmentState extends ConsumerState<TodoCurrentViewFragmen
       children: [
         // 할일 리스트 (항상 표시, 고정)
         Expanded(
+          flex: widget.viewIndex == 1 ? 6 : 1,
           child: TodoListFragment(
             filteredTodos: filteredTodos,
             shrinkWrap: true,
@@ -47,6 +48,7 @@ class _TodoCurrentViewFragmentState extends ConsumerState<TodoCurrentViewFragmen
         if (widget.viewIndex == 1) ...[
           const SizedBox(width: 8),
           Expanded(
+            flex: 4,
             child: TimeRecordFragment(
               todos: filteredTodos,
               shrinkWrap: true,

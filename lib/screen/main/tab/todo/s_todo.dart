@@ -50,82 +50,90 @@ class _TodoScreenState extends ConsumerState<TodoScreen>
     final selectedCategory = ref.watch(todoSelectedCategoryProvider);
 
     return Scaffold(
-      body: Column(
-        children: [
-          // 상단 고정 영역 (InfoCard + ViewHeader)
-          TodoInfoCardFragment(
-            selectedDate: _selectedDate,
-            onDateChanged: (newDate) {
-              setState(() {
-                _selectedDate = newDate;
-              });
-              // PageView도 해당 날짜로 이동
-              final newPage = newDate.difference(_baseDate).inDays;
-              _pageController.jumpToPage(newPage);
-            },
-          ),
-          const SizedBox(height: 16),
-          TodoViewHeaderFragment(
-            viewIndex: viewIndex,
-            selectedDate: _selectedDate,
-            onViewChanged: (newIndex) {
-              ref.read(todoViewIndexProvider.notifier).state = newIndex;
-            },
-            onTodayPressed: () {
-              final today = DateTime.now();
-              setState(() {
-                _selectedDate = today;
-              });
-              final todayPage = today.difference(_baseDate).inDays;
-              _pageController.jumpToPage(todayPage);
-            },
-          ),
-          const SizedBox(height: 16),
-
-          // 메인 컨텐츠 (PageView로 좌우 스크롤 가능)
-          Expanded(
-            child: PageView.builder(
-              controller: _pageController,
-              physics: const ClampingScrollPhysics(),
-              onPageChanged: (index) {
+      body: SafeArea(
+        child: Column(
+          children: [
+            const SizedBox(height: 16), // 추가,
+            // 상단 고정 영역 (InfoCard + ViewHeader)
+            TodoInfoCardFragment(
+              selectedDate: _selectedDate,
+              onDateChanged: (newDate) {
                 setState(() {
-                  _selectedDate = _baseDate.add(Duration(days: index));
+                  _selectedDate = newDate;
                 });
-              },
-              itemBuilder: (context, index) {
-                final currentDate = _baseDate.add(Duration(days: index));
-                return ListView(
-                  physics: const ClampingScrollPhysics(),
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
-                      child: TodoCurrentViewFragment(
-                        viewIndex: viewIndex,
-                        selectedDate: currentDate,
-                        selectedCategory: selectedCategory,
-                        onCategorySelected: (categoryName) {
-                          // 같은 카테고리를 다시 클릭하면 전체 보기로 변경
-                          if (selectedCategory == categoryName) {
-                            ref.read(todoSelectedCategoryProvider.notifier).state = null;
-                          } else {
-                            ref.read(todoSelectedCategoryProvider.notifier).state = categoryName;
-                          }
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 100),
-                  ],
-                );
+                // PageView도 해당 날짜로 이동
+                final newPage = newDate.difference(_baseDate).inDays;
+                _pageController.jumpToPage(newPage);
               },
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+            TodoViewHeaderFragment(
+              viewIndex: viewIndex,
+              selectedDate: _selectedDate,
+              onViewChanged: (newIndex) {
+                ref.read(todoViewIndexProvider.notifier).state = newIndex;
+              },
+              onTodayPressed: () {
+                final today = DateTime.now();
+                setState(() {
+                  _selectedDate = today;
+                });
+                final todayPage = today.difference(_baseDate).inDays;
+                _pageController.jumpToPage(todayPage);
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // 메인 컨텐츠 (PageView로 좌우 스크롤 가능)
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                physics: const ClampingScrollPhysics(),
+                onPageChanged: (index) {
+                  setState(() {
+                    _selectedDate = _baseDate.add(Duration(days: index));
+                  });
+                },
+                itemBuilder: (context, index) {
+                  final currentDate = _baseDate.add(Duration(days: index));
+                  return ListView(
+                    physics: const ClampingScrollPhysics(),
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 8),
+                        child: TodoCurrentViewFragment(
+                          viewIndex: viewIndex,
+                          selectedDate: currentDate,
+                          selectedCategory: selectedCategory,
+                          onCategorySelected: (categoryName) {
+                            // 같은 카테고리를 다시 클릭하면 전체 보기로 변경
+                            if (selectedCategory == categoryName) {
+                              ref
+                                  .read(todoSelectedCategoryProvider.notifier)
+                                  .state = null;
+                            } else {
+                              ref
+                                  .read(todoSelectedCategoryProvider.notifier)
+                                  .state = categoryName;
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 100),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: SizedBox(
         width: 48,
         height: 48,
         child: FloatingActionButton(
-          onPressed: () => showAddTodoDialog(context, selectedDate: _selectedDate),
+          onPressed:
+              () => showAddTodoDialog(context, selectedDate: _selectedDate),
           backgroundColor: AppColors.primary,
           elevation: 0,
           shape: const CircleBorder(),

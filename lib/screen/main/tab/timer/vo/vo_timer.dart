@@ -61,6 +61,7 @@ class TimerState {
   final TimerSettings settings;
   final DateTime? startTime;
   final DateTime? endTime;
+  final DateTime? targetEndTime;  // 목표 완료 시각 (정확한 완료 시각)
   final int completedRounds;
   final List<RoundStatus> roundStatusList;
 
@@ -73,6 +74,7 @@ class TimerState {
     this.settings = const TimerSettings(),
     this.startTime,
     this.endTime,
+    this.targetEndTime,
     this.completedRounds = 0,
     this.roundStatusList = const [],
   });
@@ -86,9 +88,11 @@ class TimerState {
     TimerSettings? settings,
     DateTime? startTime,
     DateTime? endTime,
+    DateTime? targetEndTime,
     int? completedRounds,
     List<RoundStatus>? roundStatusList,
     bool clearEndTime = false,
+    bool clearTargetEndTime = false,
   }) {
     return TimerState(
       mode: mode ?? this.mode,
@@ -99,6 +103,7 @@ class TimerState {
       settings: settings ?? this.settings,
       startTime: startTime ?? this.startTime,
       endTime: clearEndTime ? null : (endTime ?? this.endTime),
+      targetEndTime: clearTargetEndTime ? null : (targetEndTime ?? this.targetEndTime),
       completedRounds: completedRounds ?? this.completedRounds,
       roundStatusList: roundStatusList ?? this.roundStatusList,
     );
@@ -154,6 +159,7 @@ class TimerState {
       'round': round.name,
       'startTimeMillis': startTime?.millisecondsSinceEpoch,
       'endTimeMillis': endTime?.millisecondsSinceEpoch,
+      'targetEndTimeMillis': targetEndTime?.millisecondsSinceEpoch,
       'completedRounds': completedRounds,
       'roundStatusList': roundStatusList.map((e) => e.name).toList(),
       'settings': settings.toJson(),
@@ -178,6 +184,7 @@ class TimerState {
       round: PomodoroRound.values.firstWhere((e) => e.name == json['round'], orElse: () => PomodoroRound.focus),
       startTime: json['startTimeMillis'] != null ? DateTime.fromMillisecondsSinceEpoch(json['startTimeMillis']) : null,
       endTime: json['endTimeMillis'] != null ? DateTime.fromMillisecondsSinceEpoch(json['endTimeMillis']) : null,
+      targetEndTime: json['targetEndTimeMillis'] != null ? DateTime.fromMillisecondsSinceEpoch(json['targetEndTimeMillis']) : null,
       completedRounds: json['completedRounds'] ?? 0,
       roundStatusList: roundStatusList,
       settings: TimerSettings.fromJson(json['settings'] ?? {}),

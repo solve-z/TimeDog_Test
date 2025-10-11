@@ -127,8 +127,26 @@ class _TimerDebugDialog extends StatelessWidget {
     return '$minutes:$seconds';
   }
 
+  Duration? _calculateActualDuration() {
+    if (timerState.startTime == null) return null;
+
+    // running 상태면 현재까지의 실제 경과 시간
+    if (timerState.status == TimerStatus.running) {
+      return DateTime.now().difference(timerState.startTime!);
+    }
+
+    // paused/stopped 상태면 endTime이 있을 때만 계산
+    if (timerState.endTime != null) {
+      return timerState.endTime!.difference(timerState.startTime!);
+    }
+
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final actualDuration = _calculateActualDuration();
+
     return AlertDialog(
       title: const Text(
         'Timer Debug Info',
@@ -149,20 +167,34 @@ class _TimerDebugDialog extends StatelessWidget {
             ),
             const SizedBox(height: 8),
           ],
-          if (timerState.endTime != null) ...[
+          if (timerState.targetEndTime != null &&
+              timerState.status != TimerStatus.running) ...[
             Text(
-              '종료: ${_formatTime(timerState.endTime!)}',
+              '목표: ${_formatTime(timerState.targetEndTime!)}',
               style: const TextStyle(
                 fontFamily: 'OmyuPretty',
                 fontSize: 14,
-                color: Color(0xFF374151),
+                color: Color(0xFF059669),
+                fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 8),
           ],
-          if (timerState.startTime != null && timerState.endTime != null) ...[
+          if (timerState.endTime != null &&
+              timerState.status != TimerStatus.running) ...[
             Text(
-              '소요: ${_formatDuration(timerState.endTime!.difference(timerState.startTime!))}',
+              '실제: ${_formatTime(timerState.endTime!)}',
+              style: const TextStyle(
+                fontFamily: 'OmyuPretty',
+                fontSize: 14,
+                color: Color(0xFF6B7280),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          if (actualDuration != null) ...[
+            Text(
+              '${timerState.status == TimerStatus.running ? "경과" : "소요"}: ${_formatDuration(actualDuration)}',
               style: const TextStyle(
                 fontFamily: 'OmyuPretty',
                 fontSize: 14,
@@ -171,7 +203,7 @@ class _TimerDebugDialog extends StatelessWidget {
               ),
             ),
           ],
-          if (timerState.startTime == null && timerState.endTime == null)
+          if (timerState.startTime == null)
             const Text(
               '타이머 정보 없음',
               style: TextStyle(

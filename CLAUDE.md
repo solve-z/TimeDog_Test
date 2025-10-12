@@ -6,6 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Flutter project for "TimeDog" (타임독) - a timer/productivity app featuring a dog character named "김독". The app combines Pomodoro timer functionality with to-do list management, targeting students and self-improvement enthusiasts.
 
+## 디버그 log용
+
+- print문 사용하지않고
+- lib\common\utils\app_logger.dart 활용하기
+
 ## Development Commands
 
 ### Dependencies
@@ -59,6 +64,7 @@ Currently a basic Flutter starter project with:
 ## File Naming Conventions
 
 ### 1. **Widget**
+
 - 파일명: `w_{name}.dart`
 - 클래스명: `{Name}Widget`
 - 예시:
@@ -66,6 +72,7 @@ Currently a basic Flutter starter project with:
   - `w_custom_button.dart` → `CustomButtonWidget`
 
 ### 2. **Screen**
+
 - 파일명: `s_{name}.dart`
 - 클래스명: `{Name}Screen`
 - 예시:
@@ -73,6 +80,7 @@ Currently a basic Flutter starter project with:
   - `s_login.dart` → `LoginScreen`
 
 ### 3. **Fragment**
+
 - 파일명: `f_{name}.dart`
 - 클래스명: `{Name}Fragment`
 - 예시:
@@ -80,6 +88,7 @@ Currently a basic Flutter starter project with:
   - `f_consume.dart` → `ConsumeFragment`
 
 ### 4. **Dialog**
+
 - 파일명: `d_{name}.dart`
 - 클래스명: `{Name}Dialog`
 - 예시:
@@ -87,6 +96,7 @@ Currently a basic Flutter starter project with:
   - `d_bottom_menu.dart` → `BottomMenuDialog`
 
 ### 5. **Value Object (VO)**
+
 - 파일명: `vo_{name}.dart`
 - 클래스명: `{Name}Vo`
 - 예시:
@@ -94,6 +104,7 @@ Currently a basic Flutter starter project with:
   - `vo_banner.dart` → `BannerVo`
 
 ### 6. **Data Transfer Object (DTO)**
+
 - 파일명: `dto_{name}.dart`
 - 클래스명: `{Name}Dto`
 - 예시:
@@ -101,6 +112,7 @@ Currently a basic Flutter starter project with:
   - `dto_transaction.dart` → `TransactionDto`
 
 ### 7. **Dummy Data**
+
 - 파일명: `{name}_dummy.dart`
 - 내용: 테스트/개발용 더미 데이터
 - 예시:
@@ -108,6 +120,7 @@ Currently a basic Flutter starter project with:
   - `user_data_dummy.dart` → 사용자 더미 데이터
 
 ### 8. **기타 (나머지)**
+
 - 파일명: 소문자, 숫자, `_` 조합 (공식 가이드 준수)
 - 클래스명: PascalCase
 - 예시:

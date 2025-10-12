@@ -47,8 +47,8 @@ dependencies:
   # Notifications
   flutter_local_notifications: ^19.4.0
 
-  # Background Execution
-  flutter_background: ^1.2.0
+  # Foreground Service
+  flutter_foreground_task: ^8.15.0
   permission_handler: ^11.1.0
   device_info_plus: ^10.1.0
 

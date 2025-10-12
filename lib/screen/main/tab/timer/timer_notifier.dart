@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timedog_test/common/utils/app_logger.dart';
 import 'vo/vo_timer.dart';
 import 'notification_service.dart';
+import 'timer_foreground_service.dart';
 import '../todo/todo_provider.dart';
 import '../todo/vo/vo_todo_item.dart';
 import 'music_player_service.dart';
@@ -17,6 +18,7 @@ class TimerNotifier extends StateNotifier<TimerState>
   Timer? _timer;
   DateTime? _targetEndTime;
   final NotificationService _notificationService = NotificationService();
+  final TimerForegroundService _foregroundService = TimerForegroundService();
   static const String _settingsKey = 'timer_settings';
   static const String _stateKey = 'timer_state';
   bool _backgroundPermissionsInitialized = false;
@@ -29,7 +31,17 @@ class TimerNotifier extends StateNotifier<TimerState>
 
   Future<void> _initializeNotifications() async {
     await _notificationService.initialize();
+    await _foregroundService.initialize();
     await _initializeBackgroundPermissions();
+
+    // Foreground Service 데이터 수신 콜백 설정
+    _foregroundService.setDataReceivedCallback((data) {
+      final event = data['event'] as String?;
+      if (event == 'timerComplete') {
+        AppLogger.timer.i('[TimerNotifier] Foreground Service에서 완료 이벤트 수신');
+        _handlePomodoroRoundComplete();
+      }
+    });
   }
 
   Future<void> _initializeBackgroundPermissions() async {
@@ -50,6 +62,8 @@ class TimerNotifier extends StateNotifier<TimerState>
   void _initializeState() async {
     final prefs = await SharedPreferences.getInstance();
 
+    AppLogger.timer.i('=== 타이머 상태 초기화 시작 ===');
+
     // 설정 로드
     final settingsJson = prefs.getString(_settingsKey);
     TimerSettings settings = const TimerSettings();
@@ -66,8 +80,17 @@ class TimerNotifier extends StateNotifier<TimerState>
         // 앱이 정상적으로 백그라운드에 있는지 확인
         final isInBackground = prefs.getBool('app_in_background') ?? false;
 
+        AppLogger.timer.i('📂 저장된 상태 로드:');
+        AppLogger.timer.d('   - app_in_background: $isInBackground');
+        AppLogger.timer.d('   - savedState.status: ${savedState.status}');
+        AppLogger.timer.d(
+          '   - savedState.currentTime: ${savedState.currentTime.inSeconds}초',
+        );
+
         if (isInBackground) {
           // 백그라운드에서 복귀 → 정상 복원 (running 유지)
+          AppLogger.timer.i('✅ 백그라운드에서 복귀 - running 상태 유지');
+          AppLogger.timer.d('   저장된 상태: ${savedState.status}');
           final restoredState = _restoreTimerState(savedState, settings);
           state = restoredState;
 
@@ -75,27 +98,64 @@ class TimerNotifier extends StateNotifier<TimerState>
             _startTimer();
           }
         } else {
-          // 앱 재실행 → paused로 변경
-          final restoredState = _restoreTimerState(savedState, settings);
+          // 앱 재실행 (정상 종료 or 스와이프로 끄기)
+          AppLogger.timer.w('🔄 앱 재실행 감지');
+          AppLogger.timer.d('   isInBackground 플래그: $isInBackground');
+          AppLogger.timer.d('   저장된 상태: ${savedState.status}');
 
-          if (restoredState.status == TimerStatus.running) {
-            state = restoredState.copyWith(status: TimerStatus.paused);
+          // ⚠️ _restoreTimerState 전에 먼저 running 상태 체크!
+          if (savedState.status == TimerStatus.running) {
+            // 타이머가 실행 중이었는데 백그라운드 플래그가 없음
+            // → 앱이 스와이프로 종료됨 → stopped 상태로 변경
+            AppLogger.timer.w('❌ 앱이 비정상 종료됨 (스와이프) - stopped 상태로 변경');
+
+            if (savedState.mode == TimerMode.pomodoro) {
+              state = TimerState(
+                mode: savedState.mode,
+                status: TimerStatus.stopped,
+                settings: settings,
+                currentTime: settings.focusTime,
+                currentRound: savedState.currentRound,
+                round: savedState.round,
+                completedRounds: savedState.completedRounds,
+                roundStatusList: savedState.roundStatusList,
+              );
+              AppLogger.timer.i(
+                '   → stopped 상태로 변경 완료 (Pomodoro, 시간: ${state.currentTime.inSeconds}초)',
+              );
+            } else {
+              state = TimerState(
+                mode: savedState.mode,
+                status: TimerStatus.stopped,
+                settings: settings,
+                currentTime: Duration.zero,
+              );
+              AppLogger.timer.i('   → stopped 상태로 변경 완료 (Stopwatch, 시간: 0초)');
+            }
           } else {
+            // 정상 상태 복원
+            final restoredState = _restoreTimerState(savedState, settings);
+            AppLogger.timer.i('✅ 정상 상태 복원: ${restoredState.status}');
             state = restoredState;
           }
         }
 
         // 플래그 초기화
-        prefs.setBool('app_in_background', false);
-
+        await prefs.setBool('app_in_background', false);
+        AppLogger.timer.d('   - app_in_background 플래그 초기화 완료');
       } catch (e) {
-        print('상태 복원 실패: $e');
+        AppLogger.timer.e('상태 복원 실패: $e');
         state = TimerState(settings: settings, currentTime: settings.focusTime);
       }
     } else {
+      AppLogger.timer.i('저장된 상태 없음 - 기본 상태로 시작');
       // 저장된 상태가 없으면 기본 상태
       state = TimerState(settings: settings, currentTime: settings.focusTime);
     }
+
+    AppLogger.timer.i('=== 타이머 상태 초기화 완료 ===');
+    AppLogger.timer.i('   최종 상태: ${state.status}');
+    AppLogger.timer.i('   현재 시간: ${state.currentTime.inSeconds}초');
   }
 
   TimerState _restoreTimerState(
@@ -212,9 +272,6 @@ class TimerNotifier extends StateNotifier<TimerState>
     state = state.copyWith(endTime: _targetEndTime);
     _saveState();
 
-    // 시작 시에는 즉시 알림만 업데이트 (시간 표시는 그대로 유지)
-    _updateRunningNotification();
-
     // 다음 정각 초까지의 지연 시간 계산하여 정확한 타이밍으로 시작
     final currentMs = DateTime.now().millisecond;
     final delayToNextSecond = Duration(milliseconds: 1000 - currentMs);
@@ -227,7 +284,11 @@ class TimerNotifier extends StateNotifier<TimerState>
       } else {
         _updateStopwatchTimer();
       }
-      _updateRunningNotification();
+
+      // Foreground Service에 시간 업데이트 전송 (5초마다)
+      if (state.currentTime.inSeconds % 5 == 0) {
+        _updateForegroundService();
+      }
 
       // 그 후 정확히 1초마다 주기적 업데이트를 위한 새로운 타이머 시작
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -236,9 +297,27 @@ class TimerNotifier extends StateNotifier<TimerState>
         } else {
           _updateStopwatchTimer();
         }
-        _updateRunningNotification();
+
+        // Foreground Service에 시간 업데이트 전송 (5초마다)
+        if (state.currentTime.inSeconds % 5 == 0) {
+          _updateForegroundService();
+        }
       });
     });
+  }
+
+  void _updateForegroundService() async {
+    if (state.status != TimerStatus.running) return;
+
+    try {
+      final phase = _getPhaseString();
+      await _foregroundService.updateService(
+        remainingSeconds: state.currentTime.inSeconds,
+        phase: phase,
+      );
+    } catch (e) {
+      AppLogger.timer.e('Foreground Service 업데이트 실패: $e');
+    }
   }
 
   void toggleMode() {
@@ -314,21 +393,26 @@ class TimerNotifier extends StateNotifier<TimerState>
     // 상태 저장
     _saveState();
 
-    try {
-      // 백그라운드 실행 활성화
-      final enabled = await _notificationService.enableBackgroundExecution();
-      if (!enabled) {
-        print('백그라운드 실행 활성화 실패. 상태 저장으로 대체됩니다.');
-      }
-    } catch (e) {
-      print('백그라운드 실행 활성화 실패: $e');
-    }
-
     AppLogger.timer.i('타이머 시작 - 현재 시간: ${state.currentTime.inSeconds}초');
     AppLogger.timer.d(
       '목표 종료 시간: ${_targetEndTime!.hour}:${_targetEndTime!.minute}:${_targetEndTime!.second}',
     );
     AppLogger.timer.d('라운드: ${state.round}, 상태: ${state.status}');
+
+    // Foreground Service 시작
+    try {
+      final phase = _getPhaseString();
+      final started = await _foregroundService.startService(
+        remainingSeconds: state.currentTime.inSeconds,
+        phase: phase,
+      );
+
+      if (!started) {
+        AppLogger.timer.e('Foreground Service 시작 실패');
+      }
+    } catch (e) {
+      AppLogger.timer.e('Foreground Service 시작 오류: $e');
+    }
 
     // 타이머 시작 (비디오 재생 시작)
     _startTimer();
@@ -351,6 +435,21 @@ class TimerNotifier extends StateNotifier<TimerState>
       }
     } catch (e) {
       print('❌ [타이머] 음악 재생 실패: $e');
+    }
+  }
+
+  String _getPhaseString() {
+    if (state.mode == TimerMode.stopwatch) {
+      return '스톱워치';
+    }
+
+    switch (state.round) {
+      case PomodoroRound.focus:
+        return '집중 시간 (${state.currentRound}/${state.settings.totalRounds})';
+      case PomodoroRound.shortBreak:
+        return '짧은 휴식';
+      case PomodoroRound.longBreak:
+        return '긴 휴식';
     }
   }
 
@@ -424,12 +523,10 @@ class TimerNotifier extends StateNotifier<TimerState>
     _saveState();
 
     try {
-      // 백그라운드 실행 비활성화 (알림은 일시정지 상태 표시를 위해 유지)
-      await _notificationService.disableBackgroundExecution();
-      // 일시정지 상태 알림 표시
-      _updatePausedNotification();
+      // Foreground Service 일시정지
+      await _foregroundService.pauseService();
     } catch (e) {
-      print('백그라운드 실행 비활성화 실패: $e');
+      AppLogger.timer.e('Foreground Service 일시정지 실패: $e');
     }
   }
 
@@ -492,11 +589,10 @@ class TimerNotifier extends StateNotifier<TimerState>
     _saveState();
 
     try {
-      // 백그라운드 실행 비활성화 및 알림 제거
-      await _notificationService.disableBackgroundExecution();
-      await _notificationService.cancelRunningNotification();
+      // Foreground Service 정지
+      await _foregroundService.stopService();
     } catch (e) {
-      print('백그라운드 실행 비활성화 실패: $e');
+      AppLogger.timer.e('Foreground Service 정지 실패: $e');
     }
   }
 
@@ -526,11 +622,10 @@ class TimerNotifier extends StateNotifier<TimerState>
     _clearState();
 
     try {
-      // 백그라운드 실행 비활성화 및 알림 제거
-      await _notificationService.disableBackgroundExecution();
-      await _notificationService.cancelRunningNotification();
+      // Foreground Service 정지
+      await _foregroundService.stopService();
     } catch (e) {
-      print('백그라운드 실행 비활성화 실패: $e');
+      AppLogger.timer.e('Foreground Service 정지 실패: $e');
     }
   }
 
@@ -578,12 +673,16 @@ class TimerNotifier extends StateNotifier<TimerState>
 
     // ✅ 정확한 완료 시각 = _targetEndTime (타이머 시작 시 계산한 목표 시각)
     final actualEndTime = _targetEndTime ?? DateTime.now();
-    final endTime = DateTime.now();  // state.endTime용 (UI 디버그 정보)
+    final endTime = DateTime.now(); // state.endTime용 (UI 디버그 정보)
 
     AppLogger.timer.i('========== 라운드 완료 처리 시작 ==========');
     AppLogger.timer.i('완료된 라운드: ${state.round}');
-    AppLogger.timer.d('목표 완료 시각: ${actualEndTime.hour}:${actualEndTime.minute}:${actualEndTime.second}');
-    AppLogger.timer.d('실제 처리 시각: ${endTime.hour}:${endTime.minute}:${endTime.second}');
+    AppLogger.timer.d(
+      '목표 완료 시각: ${actualEndTime.hour}:${actualEndTime.minute}:${actualEndTime.second}',
+    );
+    AppLogger.timer.d(
+      '실제 처리 시각: ${endTime.hour}:${endTime.minute}:${endTime.second}',
+    );
 
     // 타이머 즉시 정지 (중복 호출 방지)
     _stopTimer();
@@ -598,11 +697,6 @@ class TimerNotifier extends StateNotifier<TimerState>
 
     if (state.round == PomodoroRound.focus) {
       // 집중 시간 완료 → 휴식으로 전환
-      await _notificationService.cancelRunningNotification(); // 실행 중 알림 취소
-      await _notificationService.showTimerCompleteNotification(
-        title: '집중 시간 완료!',
-        message: '휴식 시간으로 전환합니다. 시작 버튼을 눌러주세요.',
-      );
 
       // 집중 시간 기록 추가 (선택된 할일이 있는 경우에만)
       final todoNotifier = _ref.read(todoProvider.notifier);
@@ -611,7 +705,7 @@ class TimerNotifier extends StateNotifier<TimerState>
         final focusRecord = FocusTimeRecord(
           id: 'focus_${DateTime.now().millisecondsSinceEpoch}',
           startTime: state.startTime!,
-          endTime: actualEndTime,  // ✅ 정확한 완료 시각 사용
+          endTime: actualEndTime, // ✅ 정확한 완료 시각 사용
           focusType: FocusType.pomodoro,
         );
         await todoNotifier.addFocusTimeToSelectedTodo(focusRecord);
@@ -653,7 +747,7 @@ class TimerNotifier extends StateNotifier<TimerState>
         round: nextRound,
         currentTime: nextTime,
         endTime: endTime,
-        targetEndTime: actualEndTime,  // 목표 완료 시각 저장
+        targetEndTime: actualEndTime, // 목표 완료 시각 저장
         startTime: null,
         completedRounds: state.currentRound, // 집중 시간 완료 시 라운드 완료 카운트
         roundStatusList: updatedStatusList,
@@ -667,11 +761,6 @@ class TimerNotifier extends StateNotifier<TimerState>
       // 휴식 시간 완료
       if (state.currentRound < state.settings.totalRounds) {
         // 아직 더 해야할 라운드가 있음 → 다음 집중 시간으로
-        await _notificationService.cancelRunningNotification(); // 실행 중 알림 취소
-        await _notificationService.showTimerCompleteNotification(
-          title: '휴식 시간 완료!',
-          message: '다음 집중 시간으로 전환합니다. 시작 버튼을 눌러주세요.',
-        );
 
         // roundStatusList 업데이트: 현재 라운드를 휴식 완료로 표시
         final updatedStatusList = List<RoundStatus>.from(
@@ -701,11 +790,6 @@ class TimerNotifier extends StateNotifier<TimerState>
         _saveState();
       } else {
         // 마지막 라운드의 휴식 완료 → 모든 라운드 완료
-        await _notificationService.cancelRunningNotification(); // 실행 중 알림 취소
-        await _notificationService.showTimerCompleteNotification(
-          title: '뽀모도로 완료! 🎉',
-          message: '모든 라운드를 완료했습니다!',
-        );
 
         // roundStatusList 업데이트: 마지막 라운드를 휴식 완료로 표시
         final updatedStatusList = List<RoundStatus>.from(
@@ -735,70 +819,15 @@ class TimerNotifier extends StateNotifier<TimerState>
 
         // 상태 저장 (완료 상태로)
         _saveState();
-        await _notificationService.disableBackgroundExecution();
-        await _notificationService.cancelRunningNotification();
+
+        // Foreground Service 정지
+        try {
+          await _foregroundService.stopService();
+        } catch (e) {
+          AppLogger.timer.e('Foreground Service 정지 실패: $e');
+        }
       }
     }
-  }
-
-  void _updateRunningNotification() async {
-    // 타이머가 실행 중일 때만 진행 상황 알림 표시
-    if (state.status != TimerStatus.running) return;
-
-    // 00:00일 때는 알림 업데이트 안함 (완료 알림이 곧 표시될 예정)
-    if (state.currentTime.inSeconds == 0) return;
-
-    String phase;
-    if (state.mode == TimerMode.pomodoro) {
-      switch (state.round) {
-        case PomodoroRound.focus:
-          phase = '집중 시간 (${state.currentRound}/${state.settings.totalRounds})';
-          break;
-        case PomodoroRound.shortBreak:
-          phase = '짧은 휴식';
-          break;
-        case PomodoroRound.longBreak:
-          phase = '긴 휴식';
-          break;
-      }
-    } else {
-      phase = '스톱워치';
-    }
-
-    // 진행 상황과 모드/라운드 정보를 표시하는 지속적 알림
-    await _notificationService.showTimerRunningNotification(
-      timeRemaining: state.formattedTime,
-      phase: phase,
-    );
-  }
-
-  void _updatePausedNotification() async {
-    // 일시정지 상태에서만 일시정지 알림 표시
-    if (state.status != TimerStatus.paused) return;
-
-    String phase;
-    if (state.mode == TimerMode.pomodoro) {
-      switch (state.round) {
-        case PomodoroRound.focus:
-          phase =
-              '집중 시간 (${state.currentRound}/${state.settings.totalRounds}) - 일시정지';
-          break;
-        case PomodoroRound.shortBreak:
-          phase = '짧은 휴식 - 일시정지';
-          break;
-        case PomodoroRound.longBreak:
-          phase = '긴 휴식 - 일시정지';
-          break;
-      }
-    } else {
-      phase = '스톱워치 - 일시정지';
-    }
-
-    // 일시정지 상태 표시 알림
-    await _notificationService.showTimerPausedNotification(
-      timeRemaining: state.formattedTime,
-      phase: phase,
-    );
   }
 
   void _stopTimer() async {
@@ -815,21 +844,31 @@ class TimerNotifier extends StateNotifier<TimerState>
 
     switch (state) {
       case AppLifecycleState.resumed:
-        print('📱 앱 복원됨 - 시간 동기화 시작');
-        _syncTimerOnResume();
-        _clearBackgroundFlag();
-        break;
-      case AppLifecycleState.paused:
-      case AppLifecycleState.inactive:
-        print('📱 앱 백그라운드로 이동');
+        AppLogger.timer.i('📱 앱 복원됨 - 백그라운드에서 정상 복귀');
+
+        // 타이머가 실행 중이었다면 백그라운드 플래그 설정 (정상 복귀)
         if (this.state.status == TimerStatus.running) {
-          print('   타이머 실행 중 - 상태 저장');
-          _saveState();
+          AppLogger.timer.i('   타이머 실행 중 - app_in_background = true 설정');
           _setBackgroundFlag();
+          _syncTimerOnResume();
         }
         break;
-      case AppLifecycleState.detached:
+      case AppLifecycleState.paused:
+        AppLogger.timer.i('📱 앱 일시정지(paused) - 백그라운드 플래그 제거');
+        // paused 상태에서 플래그 제거 (detached는 타이밍 문제로 신뢰할 수 없음)
         _clearBackgroundFlag();
+
+        if (this.state.status == TimerStatus.running) {
+          AppLogger.timer.i('   타이머 실행 중 - 상태 저장');
+          _saveState();
+        }
+        break;
+      case AppLifecycleState.inactive:
+        // inactive는 일시적 상태 (전화, 알림 등) - 아무 처리 안함
+        AppLogger.timer.d('📱 앱 inactive 상태');
+        break;
+      case AppLifecycleState.detached:
+        AppLogger.timer.w('📱 앱 종료(detached) 감지');
         break;
       case AppLifecycleState.hidden:
         break;
@@ -885,10 +924,10 @@ class TimerNotifier extends StateNotifier<TimerState>
     _stopTimer();
     _targetEndTime = null;
     try {
-      await _notificationService.disableBackgroundExecution();
+      await _foregroundService.stopService();
       await _notificationService.cancelAllNotifications();
     } catch (e) {
-      print('NotificationService 정리 실패: $e');
+      AppLogger.timer.e('서비스 정리 실패: $e');
     }
     super.dispose();
   }

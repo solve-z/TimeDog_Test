@@ -27,16 +27,15 @@ class VideoControllerNotifier extends StateNotifier<VideoPlayerController?> {
 
   Future<void> _configureAudioSession() async {
     try {
-      AppLogger.video.i('========== 오디오 세션 설정 시작 ==========');
-
       final session = await AudioSession.instance;
-      AppLogger.video.d('AudioSession 인스턴스 획득 완료');
 
       const config = AudioSessionConfiguration(
         avAudioSessionCategory: AVAudioSessionCategory.ambient,
-        avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.mixWithOthers,
+        avAudioSessionCategoryOptions:
+            AVAudioSessionCategoryOptions.mixWithOthers,
         avAudioSessionMode: AVAudioSessionMode.moviePlayback,
-        avAudioSessionRouteSharingPolicy: AVAudioSessionRouteSharingPolicy.defaultPolicy,
+        avAudioSessionRouteSharingPolicy:
+            AVAudioSessionRouteSharingPolicy.defaultPolicy,
         avAudioSessionSetActiveOptions: AVAudioSessionSetActiveOptions.none,
         androidAudioAttributes: AndroidAudioAttributes(
           contentType: AndroidAudioContentType.movie,
@@ -46,19 +45,7 @@ class VideoControllerNotifier extends StateNotifier<VideoPlayerController?> {
         androidWillPauseWhenDucked: false,
       );
 
-      AppLogger.video.d('설정 내용:');
-      AppLogger.video.d('  iOS Category: ambient');
-      AppLogger.video.d('  iOS Options: mixWithOthers');
-      AppLogger.video.d('  Android ContentType: movie');
-      AppLogger.video.d('  Android Usage: media');
-
       await session.configure(config);
-
-      AppLogger.video.i('오디오 세션 설정 완료 ✅');
-      AppLogger.video.d('현재 설정 확인:');
-      AppLogger.video.d('  Category: ${session.configuration?.avAudioSessionCategory}');
-      AppLogger.video.d('  Options: ${session.configuration?.avAudioSessionCategoryOptions}');
-      AppLogger.video.i('========== 오디오 세션 설정 끝 ==========');
     } catch (e, stackTrace) {
       AppLogger.video.e('오디오 세션 설정 실패: $e');
       AppLogger.video.e('스택 트레이스: $stackTrace');
@@ -89,12 +76,8 @@ class VideoControllerNotifier extends StateNotifier<VideoPlayerController?> {
     if (_currentVideoPath == videoPath &&
         state != null &&
         state!.value.isInitialized) {
-      AppLogger.video.d('이미 같은 비디오가 로드되어 있음 - 스킵');
       return;
     }
-
-    AppLogger.video.i('========== 비디오 로드 시작 ==========');
-    AppLogger.video.d('비디오 경로: $videoPath');
 
     // 기존 컨트롤러 정리
     final oldController = state;
@@ -111,18 +94,13 @@ class VideoControllerNotifier extends StateNotifier<VideoPlayerController?> {
     _currentVideoPath = videoPath;
     final controller = VideoPlayerController.asset(videoPath);
 
-    AppLogger.video.d('VideoPlayerController 생성 완료');
-
     controller
         .initialize()
         .then((_) {
           if (mounted) {
-            AppLogger.video.i('비디오 초기화 완료');
             controller.setLooping(true);
             controller.setVolume(0.0);
-            AppLogger.video.d('비디오 설정: looping=true, volume=0.0');
             state = controller;
-            AppLogger.video.i('========== 비디오 로드 완료 ==========');
           }
         })
         .catchError((error) {

@@ -83,36 +83,25 @@ class _CharacterAnimationFragmentState
       _playbackListener = null;
     }
 
-    AppLogger.video.i('========== 타이머 상태 확인 ==========');
-    AppLogger.video.d('타이머 상태: ${timerState.status}');
-    AppLogger.video.d('비디오 재생 중: ${controller.value.isPlaying}');
-
     // 타이머 상태와 비디오 재생 상태 동기화
     switch (timerState.status) {
       case TimerStatus.running:
         if (!controller.value.isPlaying) {
-          AppLogger.video.i('타이머 실행 중 - 비디오 재생 시작');
           controller.play();
-          AppLogger.video.d('비디오 play() 호출 완료');
-        } else {
-          AppLogger.video.d('비디오 이미 재생 중');
-        }
+        } else {}
         break;
       case TimerStatus.paused:
         if (controller.value.isPlaying) {
-          AppLogger.video.i('타이머 일시정지 - 비디오 일시정지');
           controller.pause();
         }
         break;
       case TimerStatus.stopped:
-        AppLogger.video.i('타이머 정지 - 비디오 정지');
         controller.pause();
         controller.seekTo(Duration.zero);
         break;
     }
 
     _previousStatus = timerState.status;
-    AppLogger.video.i('========== 타이머 상태 확인 끝 ==========');
   }
 
   @override

@@ -181,46 +181,32 @@ class MusicPlayerService {
 
   Future<void> playCompletionSound() async {
     try {
-      AppLogger.sound.i('========== 완료 사운드 재생 시작 ==========');
-
       // 기존 배경 음악 플레이어를 사용 (이미 검증된 방식)
-      // 현재 재생 중인 음악 정보 저장
-      final previousMusicId = _currentPlayingId;
-      AppLogger.sound.d('이전 음악 ID: $previousMusicId');
 
       // 배경 음악 정지
       await _audioPlayer.stop();
-      AppLogger.sound.d('배경 음악 정지 완료');
 
       // 완료 사운드용 임시 설정
       final originalVolume = 0.5; // 원래 볼륨
       await _audioPlayer.setVolume(1.0); // 완료 사운드는 최대 볼륨
-      AppLogger.sound.d('볼륨 설정: 1.0');
 
       // ReleaseMode 임시 변경 (한 번만 재생)
       await _audioPlayer.setReleaseMode(ReleaseMode.release);
-      AppLogger.sound.d('ReleaseMode: release (한 번만 재생)');
 
       // 완료 사운드 재생
-      AppLogger.sound.i('재생 경로: audios/alarm_7.wav');
       await _audioPlayer.play(AssetSource('audios/alarm_7.wav'));
-      AppLogger.sound.i('완료 사운드 재생 시작');
 
       // 완료 사운드 재생 대기 (1.5초)
       await Future.delayed(const Duration(milliseconds: 1500));
-      AppLogger.sound.d('완료 사운드 재생 대기 완료');
 
       // 원래 설정 복원
       await _audioPlayer.stop();
       await _audioPlayer.setReleaseMode(ReleaseMode.loop); // 루프 모드로 복원
       await _audioPlayer.setVolume(originalVolume); // 원래 볼륨으로 복원
-      AppLogger.sound.d('플레이어 설정 복원 완료');
 
       // 상태 초기화
       _currentPlayingId = null;
       _isPlaying = false;
-
-      AppLogger.sound.i('========== 완료 사운드 재생 처리 끝 ==========');
     } catch (e, stackTrace) {
       AppLogger.sound.e('완료 사운드 재생 오류: $e');
       AppLogger.sound.e('스택 트레이스: $stackTrace');
@@ -228,7 +214,6 @@ class MusicPlayerService {
   }
 
   void dispose() {
-    print('🗑️  MusicPlayerService dispose');
     _audioPlayer.stop();
     _audioPlayer.dispose();
     _soundEffectPlayer.stop();

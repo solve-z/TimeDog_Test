@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'vo/vo_todo_item.dart';
 import 'todo_provider.dart';
 import '../../../../common/constant/app_constants.dart';
+import '../../../../common/dialog/d_add_todo.dart';
 
 class TodoListFragment extends ConsumerStatefulWidget {
   final List<TodoItemVo>? filteredTodos; // 필터된 할일 목록 (선택적)
@@ -63,7 +64,9 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
 
     return GestureDetector(
       onTap:
-          isClickable ? () => widget.onCategorySelected!(categoryName) : null,
+          isClickable
+              ? () => widget.onCategorySelected!(categoryName)
+              : () => _showAddTodoForCategory(categoryName),
       child: Container(
         margin: const EdgeInsets.all(2), // 테두리 공간 미리 확보
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
@@ -672,6 +675,22 @@ class _TodoListFragmentState extends ConsumerState<TodoListFragment> {
 
   void _postponeToTomorrow(TodoItemVo todo) async {
     await ref.read(todoProvider.notifier).postponeToTomorrow(todo.id);
+  }
+
+  void _showAddTodoForCategory(String categoryName) {
+    final todoState = ref.read(todoProvider);
+    final categoryTodos = todoState.allTodos
+        .where((todo) => (todo.category ?? '기타') == categoryName)
+        .toList();
+
+    final selectedDate =
+        categoryTodos.isNotEmpty ? categoryTodos.first.scheduledDate : DateTime.now();
+
+    showAddTodoDialog(
+      context,
+      selectedDate: selectedDate,
+      selectedCategory: categoryName,
+    );
   }
 
   void _showDeleteConfirmDialog(TodoItemVo todo) {

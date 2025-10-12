@@ -35,13 +35,16 @@ class _TodoCurrentViewFragmentState extends ConsumerState<TodoCurrentViewFragmen
         // 할일 리스트 (항상 표시, 고정)
         Expanded(
           flex: widget.viewIndex == 1 ? 6 : 1,
-          child: TodoListFragment(
-            filteredTodos: filteredTodos,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            isCompactMode: widget.viewIndex == 1,
-            onCategorySelected: widget.viewIndex == 1 ? widget.onCategorySelected : null,
-            selectedCategory: widget.viewIndex == 1 ? widget.selectedCategory : null,
+          child: SingleChildScrollView(
+            physics: const ClampingScrollPhysics(),
+            child: TodoListFragment(
+              filteredTodos: filteredTodos,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              isCompactMode: widget.viewIndex == 1,
+              onCategorySelected: widget.viewIndex == 1 ? widget.onCategorySelected : null,
+              selectedCategory: widget.viewIndex == 1 ? widget.selectedCategory : null,
+            ),
           ),
         ),
         // 타임 레코드 (viewIndex == 1일 때만 표시)
@@ -49,11 +52,14 @@ class _TodoCurrentViewFragmentState extends ConsumerState<TodoCurrentViewFragmen
           const SizedBox(width: 8),
           Expanded(
             flex: 4,
-            child: TimeRecordFragment(
-              todos: filteredTodos,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              selectedCategory: widget.selectedCategory,
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: TimeRecordFragment(
+                todos: filteredTodos,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                selectedCategory: widget.selectedCategory,
+              ),
             ),
           ),
         ],

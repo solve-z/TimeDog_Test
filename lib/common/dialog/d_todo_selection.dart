@@ -5,6 +5,7 @@ import '../../screen/main/tab/todo/todo_provider.dart';
 import '../../screen/main/tab/todo/category_order_provider.dart';
 import '../../screen/main/tab/todo/vo/vo_todo_item.dart';
 import '../utils/category_utils.dart';
+import '../utils/date_utils.dart';
 import 'd_add_todo.dart';
 
 class TodoSelectionDialog extends ConsumerStatefulWidget {
@@ -413,7 +414,7 @@ class _TodoSelectionDialogState extends ConsumerState<TodoSelectionDialog> {
   List<TodoItemVo> _getFilteredTodos(List<TodoItemVo> todos, String filter) {
     final incompleteTodos = todos.where((todo) => !todo.isCompleted).toList();
     final todayTodos =
-        incompleteTodos.where((todo) => _isToday(todo.scheduledDate)).toList();
+        incompleteTodos.where((todo) => _isAppToday(todo.scheduledDate)).toList();
 
     switch (filter) {
       case '전체':
@@ -423,18 +424,20 @@ class _TodoSelectionDialogState extends ConsumerState<TodoSelectionDialog> {
     }
   }
 
-  bool _isToday(DateTime date) {
-    final now = DateTime.now();
-    return date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day;
+  bool _isAppToday(DateTime date) {
+    // 앱 기준 오늘과 비교
+    final appToday = AppDateUtils.getAppToday();
+    return date.year == appToday.year &&
+        date.month == appToday.month &&
+        date.day == appToday.day;
   }
 
   String _formatCurrentDate() {
-    final now = DateTime.now();
+    // 앱 기준 오늘 날짜 표시
+    final appToday = AppDateUtils.getAppToday();
     final weekdays = ['월', '화', '수', '목', '금', '토', '일'];
-    final weekday = weekdays[now.weekday - 1];
-    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} ($weekday)';
+    final weekday = weekdays[appToday.weekday - 1];
+    return '${appToday.year}-${appToday.month.toString().padLeft(2, '0')}-${appToday.day.toString().padLeft(2, '0')} ($weekday)';
   }
 }
 

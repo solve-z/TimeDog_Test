@@ -84,19 +84,7 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 헤더
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Text(
-                '할일 추가',
-                style: const TextStyle(
-                  fontFamily: 'OmyuPretty',
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF111827),
-                ),
-              ),
-            ),
+            const SizedBox(height: 20),
 
             // 텍스트 입력 필드
             Padding(
@@ -170,7 +158,8 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
                       onTap: () {
                         if (titleController.text.trim().isNotEmpty) {
                           _addNewTodo();
-                          Navigator.of(context).pop(selectedCategory);
+                          // 텍스트 필드 초기화하고 계속 입력 가능하도록
+                          titleController.clear();
                         }
                       },
                       child: Container(

@@ -8,6 +8,7 @@ class TodoViewHeaderFragment extends StatelessWidget {
   final DateTime selectedDate;
   final Function(int) onViewChanged;
   final VoidCallback onTodayPressed;
+  final VoidCallback onAddTodoPressed;
 
   const TodoViewHeaderFragment({
     super.key,
@@ -15,6 +16,7 @@ class TodoViewHeaderFragment extends StatelessWidget {
     required this.selectedDate,
     required this.onViewChanged,
     required this.onTodayPressed,
+    required this.onAddTodoPressed,
   });
 
   @override
@@ -39,6 +41,19 @@ class TodoViewHeaderFragment extends StatelessWidget {
           const Spacer(),
           Row(
             children: [
+              // 할일 추가 버튼
+              GestureDetector(
+                onTap: onAddTodoPressed,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.add, color: Colors.white, size: 16),
+                ),
+              ),
+              const SizedBox(width: 8),
               // 할일리스트 화면 이동 버튼
               GestureDetector(
                 onTap: () {

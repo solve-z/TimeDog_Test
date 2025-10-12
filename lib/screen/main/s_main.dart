@@ -32,7 +32,17 @@ class _MainScreenState extends State<MainScreen> {
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_currentIndex != 0) {
+          setState(() {
+            _currentIndex = 0;
+          });
+        }
+      },
+      child: Scaffold(
       appBar:
           isLandscape
               ? null
@@ -77,6 +87,7 @@ class _MainScreenState extends State<MainScreen> {
                   });
                 },
               ),
+      ),
     );
   }
 }

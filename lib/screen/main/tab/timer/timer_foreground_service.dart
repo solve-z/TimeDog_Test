@@ -11,6 +11,7 @@ class TimerTaskHandler extends TaskHandler {
   bool _isRunning = false;
   Timer? _timer;
   String _phase = '집중 시간';
+  bool _isStopwatch = false; // 스톱워치 모드 여부
 
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
@@ -33,6 +34,7 @@ class TimerTaskHandler extends TaskHandler {
         case 'start':
           _remainingSeconds = data['remainingSeconds'] as int? ?? 0;
           _phase = data['phase'] as String? ?? '집중 시간';
+          _isStopwatch = data['isStopwatch'] as bool? ?? false;
           _startTimer();
           break;
 
@@ -47,6 +49,7 @@ class TimerTaskHandler extends TaskHandler {
         case 'update':
           _remainingSeconds = data['remainingSeconds'] as int? ?? 0;
           _phase = data['phase'] as String? ?? '집중 시간';
+          _isStopwatch = data['isStopwatch'] as bool? ?? false;
           if (_isRunning) {
             _updateNotification();
           }
@@ -55,6 +58,7 @@ class TimerTaskHandler extends TaskHandler {
         case 'resume':
           _remainingSeconds = data['remainingSeconds'] as int? ?? 0;
           _phase = data['phase'] as String? ?? '집중 시간';
+          _isStopwatch = data['isStopwatch'] as bool? ?? false;
           _startTimer();
           break;
       }
@@ -62,7 +66,9 @@ class TimerTaskHandler extends TaskHandler {
   }
 
   void _startTimer() {
-    AppLogger.timer.i('[TaskHandler] 타이머 시작 - 남은 시간: $_remainingSeconds초');
+    AppLogger.timer.i(
+      '[TaskHandler] 타이머 시작 - 시간: $_remainingSeconds초, 스톱워치: $_isStopwatch',
+    );
 
     _stopTimer(); // 기존 타이머 정리
     _isRunning = true;
@@ -77,7 +83,12 @@ class TimerTaskHandler extends TaskHandler {
         return;
       }
 
-      _remainingSeconds--;
+      // 스톱워치는 증가, 뽀모도로는 감소
+      if (_isStopwatch) {
+        _remainingSeconds++;
+      } else {
+        _remainingSeconds--;
+      }
 
       // 알림 업데이트 (1초마다)
       _updateNotification();
@@ -90,8 +101,11 @@ class TimerTaskHandler extends TaskHandler {
         });
       }
 
-      if (_remainingSeconds <= 0) {
-        AppLogger.timer.i('[TaskHandler] 타이머 완료');
+      // 뽀모도로만 완료 체크 (스톱워치는 무한)
+      if (!_isStopwatch && _remainingSeconds <= 0) {
+        AppLogger.timer.i(
+          '[TaskHandler] 타이머 완료 감지 - 스톱워치: $_isStopwatch, 시간: $_remainingSeconds초',
+        );
         _isRunning = false;
         timer.cancel();
 
@@ -111,9 +125,10 @@ class TimerTaskHandler extends TaskHandler {
     _timer = null;
 
     // 일시정지 알림 표시
+    final label = _isStopwatch ? '경과 시간' : '남은 시간';
     FlutterForegroundTask.updateService(
       notificationTitle: 'TimeDog - $_phase - 일시정지',
-      notificationText: '남은 시간: ${_formatTime(_remainingSeconds)}',
+      notificationText: '$label: ${_formatTime(_remainingSeconds)}',
     );
   }
 
@@ -126,10 +141,11 @@ class TimerTaskHandler extends TaskHandler {
 
   void _updateNotification() {
     final timeString = _formatTime(_remainingSeconds);
+    final label = _isStopwatch ? '경과 시간' : '남은 시간';
 
     FlutterForegroundTask.updateService(
       notificationTitle: 'TimeDog - $_phase',
-      notificationText: '남은 시간: $timeString',
+      notificationText: '$label: $timeString',
     );
   }
 
@@ -258,6 +274,7 @@ class TimerForegroundService {
   Future<bool> startService({
     required int remainingSeconds,
     required String phase,
+    bool isStopwatch = false,
   }) async {
     await initialize();
 
@@ -283,11 +300,12 @@ class TimerForegroundService {
     }
 
     final timeString = _formatTime(remainingSeconds);
+    final label = isStopwatch ? '경과 시간' : '남은 시간';
 
     final result = await FlutterForegroundTask.startService(
       serviceId: 256,
       notificationTitle: 'TimeDog - $phase',
-      notificationText: '남은 시간: $timeString',
+      notificationText: '$label: $timeString',
       notificationIcon: null,
       notificationButtons: [],
       callback: startCallback,
@@ -303,6 +321,7 @@ class TimerForegroundService {
         'command': 'start',
         'remainingSeconds': remainingSeconds,
         'phase': phase,
+        'isStopwatch': isStopwatch,
       });
 
       return true;
@@ -350,17 +369,26 @@ class TimerForegroundService {
   Future<void> updateService({
     required int remainingSeconds,
     required String phase,
+    bool isStopwatch = false,
   }) async {
     sendCommand({
       'command': 'update',
       'remainingSeconds': remainingSeconds,
       'phase': phase,
+      'isStopwatch': isStopwatch,
     });
   }
 
   /// 서비스 정지
   Future<bool> stopService() async {
     AppLogger.timer.i('[ForegroundService] 서비스 정지 요청');
+
+    // 서비스가 실행 중인지 먼저 확인
+    final isRunning = await FlutterForegroundTask.isRunningService;
+    if (!isRunning) {
+      AppLogger.timer.d('[ForegroundService] 서비스가 이미 정지됨 - 스킵');
+      return true;
+    }
 
     sendCommand({'command': 'stop'});
     await Future.delayed(const Duration(milliseconds: 100));
@@ -372,7 +400,7 @@ class TimerForegroundService {
       AppLogger.timer.i('[ForegroundService] 서비스 정지 성공');
       return true;
     } else if (result is ServiceRequestFailure) {
-      AppLogger.timer.e('[ForegroundService] 서비스 정지 실패: ${result.error}');
+      AppLogger.timer.w('[ForegroundService] 서비스 정지 실패: ${result.error}');
       return false;
     }
 

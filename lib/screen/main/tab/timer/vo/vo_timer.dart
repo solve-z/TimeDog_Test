@@ -50,6 +50,16 @@ class TimerSettings {
       longBreakTime: Duration(minutes: json['longBreakTimeMinutes'] ?? 15),
     );
   }
+
+  @override
+  String toString() {
+    return 'TimerSettings('
+        'totalRounds: $totalRounds, '
+        'focusTime: $focusTime, '
+        'shortBreakTime: $shortBreakTime, '
+        'longBreakTime: $longBreakTime'
+        ')';
+  }
 }
 
 class TimerState {
@@ -61,7 +71,7 @@ class TimerState {
   final TimerSettings settings;
   final DateTime? startTime;
   final DateTime? endTime;
-  final DateTime? targetEndTime;  // 목표 완료 시각 (정확한 완료 시각)
+  final DateTime? targetEndTime; // 목표 완료 시각 (정확한 완료 시각)
   final int completedRounds;
   final List<RoundStatus> roundStatusList;
 
@@ -103,7 +113,8 @@ class TimerState {
       settings: settings ?? this.settings,
       startTime: startTime ?? this.startTime,
       endTime: clearEndTime ? null : (endTime ?? this.endTime),
-      targetEndTime: clearTargetEndTime ? null : (targetEndTime ?? this.targetEndTime),
+      targetEndTime:
+          clearTargetEndTime ? null : (targetEndTime ?? this.targetEndTime),
       completedRounds: completedRounds ?? this.completedRounds,
       roundStatusList: roundStatusList ?? this.roundStatusList,
     );
@@ -168,26 +179,66 @@ class TimerState {
 
   factory TimerState.fromJson(Map<String, dynamic> json) {
     final roundStatusListJson = json['roundStatusList'] as List<dynamic>?;
-    final roundStatusList = roundStatusListJson
-            ?.map((name) => RoundStatus.values.firstWhere(
-                  (e) => e.name == name,
-                  orElse: () => RoundStatus.notStarted,
-                ))
+    final roundStatusList =
+        roundStatusListJson
+            ?.map(
+              (name) => RoundStatus.values.firstWhere(
+                (e) => e.name == name,
+                orElse: () => RoundStatus.notStarted,
+              ),
+            )
             .toList() ??
         [];
 
     return TimerState(
-      mode: TimerMode.values.firstWhere((e) => e.name == json['mode'], orElse: () => TimerMode.pomodoro),
-      status: TimerStatus.values.firstWhere((e) => e.name == json['status'], orElse: () => TimerStatus.stopped),
+      mode: TimerMode.values.firstWhere(
+        (e) => e.name == json['mode'],
+        orElse: () => TimerMode.pomodoro,
+      ),
+      status: TimerStatus.values.firstWhere(
+        (e) => e.name == json['status'],
+        orElse: () => TimerStatus.stopped,
+      ),
       currentTime: Duration(seconds: json['currentTimeSeconds'] ?? 0),
       currentRound: json['currentRound'] ?? 1,
-      round: PomodoroRound.values.firstWhere((e) => e.name == json['round'], orElse: () => PomodoroRound.focus),
-      startTime: json['startTimeMillis'] != null ? DateTime.fromMillisecondsSinceEpoch(json['startTimeMillis']) : null,
-      endTime: json['endTimeMillis'] != null ? DateTime.fromMillisecondsSinceEpoch(json['endTimeMillis']) : null,
-      targetEndTime: json['targetEndTimeMillis'] != null ? DateTime.fromMillisecondsSinceEpoch(json['targetEndTimeMillis']) : null,
+      round: PomodoroRound.values.firstWhere(
+        (e) => e.name == json['round'],
+        orElse: () => PomodoroRound.focus,
+      ),
+      startTime:
+          json['startTimeMillis'] != null
+              ? DateTime.fromMillisecondsSinceEpoch(json['startTimeMillis'])
+              : null,
+      endTime:
+          json['endTimeMillis'] != null
+              ? DateTime.fromMillisecondsSinceEpoch(json['endTimeMillis'])
+              : null,
+      targetEndTime:
+          json['targetEndTimeMillis'] != null
+              ? DateTime.fromMillisecondsSinceEpoch(json['targetEndTimeMillis'])
+              : null,
       completedRounds: json['completedRounds'] ?? 0,
       roundStatusList: roundStatusList,
       settings: TimerSettings.fromJson(json['settings'] ?? {}),
     );
+  }
+
+  @override
+  String toString() {
+    return '''
+TimerState(
+  mode: $mode,
+  status: $status,
+  currentTime: $currentTime,
+  currentRound: $currentRound,
+  round: $round,
+  settings: $settings,
+  startTime: $startTime,
+  endTime: $endTime,
+  targetEndTime: $targetEndTime,
+  completedRounds: $completedRounds,
+  roundStatusList: $roundStatusList
+)
+''';
   }
 }

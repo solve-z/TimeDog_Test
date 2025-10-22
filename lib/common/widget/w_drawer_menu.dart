@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:timedog_test/screen/settings/s_pomodoro_setting.dart';
 import '../../screen/main/tab/timer/s_timer_settings.dart';
 import '../../screen/main/tab/timer/timer_notifier.dart';
 import '../../screen/main/tab/timer/vo/vo_timer.dart';
@@ -77,6 +78,23 @@ class _DrawerMenuWidgetState extends ConsumerState<DrawerMenuWidget>
                       context,
                       MaterialPageRoute(
                         builder: (context) => const TimerSettingsScreen(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: SvgPicture.asset(
+                    'assets/images/icons/setting.svg',
+                    width: 36,
+                    height: 36,
+                  ),
+                  title: const Text('뽀모도로 설정'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PomodoroSettingScreen(),
                       ),
                     );
                   },
@@ -169,7 +187,9 @@ class _TimerModeSegment extends StatelessWidget {
                                 if (!isPomodoroMode) onToggle();
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                                 color: Colors.transparent,
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -179,7 +199,9 @@ class _TimerModeSegment extends StatelessWidget {
                                       width: 20,
                                       height: 20,
                                       colorFilter: ColorFilter.mode(
-                                        isPomodoroMode ? Colors.white : const Color(0xFF6B7280),
+                                        isPomodoroMode
+                                            ? Colors.white
+                                            : const Color(0xFF6B7280),
                                         BlendMode.srcIn,
                                       ),
                                     ),
@@ -189,7 +211,10 @@ class _TimerModeSegment extends StatelessWidget {
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w500,
-                                        color: isPomodoroMode ? Colors.white : const Color(0xFF6B7280),
+                                        color:
+                                            isPomodoroMode
+                                                ? Colors.white
+                                                : const Color(0xFF6B7280),
                                       ),
                                     ),
                                   ],
@@ -203,7 +228,9 @@ class _TimerModeSegment extends StatelessWidget {
                                 if (isPomodoroMode) onToggle();
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                                 color: Colors.transparent,
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -213,7 +240,9 @@ class _TimerModeSegment extends StatelessWidget {
                                       width: 20,
                                       height: 20,
                                       colorFilter: ColorFilter.mode(
-                                        !isPomodoroMode ? Colors.white : const Color(0xFF6B7280),
+                                        !isPomodoroMode
+                                            ? Colors.white
+                                            : const Color(0xFF6B7280),
                                         BlendMode.srcIn,
                                       ),
                                     ),
@@ -223,7 +252,10 @@ class _TimerModeSegment extends StatelessWidget {
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w500,
-                                        color: !isPomodoroMode ? Colors.white : const Color(0xFF6B7280),
+                                        color:
+                                            !isPomodoroMode
+                                                ? Colors.white
+                                                : const Color(0xFF6B7280),
                                       ),
                                     ),
                                   ],

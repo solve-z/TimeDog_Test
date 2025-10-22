@@ -137,10 +137,7 @@ class _NumberPickerDialogState extends State<NumberPickerDialog> {
                                       fontFamily: 'OmyuPretty',
                                       fontSize: 36,
                                       fontWeight: FontWeight.w400,
-                                      color:
-                                          isScrolling
-                                              ? const Color(0xFFC76D71)
-                                              : const Color(0xFF111827),
+                                      color: const Color(0xFF111827),
                                     ),
                                     child: Text('$value'),
                                   ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timedog_test/common/dialog/d_number_picker.dart';
+import 'package:timedog_test/common/widget/w_common_app_bar.dart';
 import 'package:timedog_test/screen/main/tab/timer/timer_notifier.dart';
 import 'package:timedog_test/screen/main/tab/timer/vo/vo_timer.dart';
 
@@ -32,25 +33,7 @@ class _PomodoroSettingScreenState extends ConsumerState<PomodoroSettingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF6B7280)),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          '뽀모도로 설정',
-          style: TextStyle(
-            fontFamily: 'OmyuPretty',
-            fontSize: 16,
-            color: Color(0xFF6B7280),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        centerTitle: true,
-      ),
-
+      appBar: CommonAppBar(title: '뽀모도로 설정'),
       body: SafeArea(
         bottom: true,
         child: SingleChildScrollView(

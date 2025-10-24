@@ -14,79 +14,40 @@ class BottomNavigationWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: Theme.of(context).copyWith(
-        splashColor: Colors.transparent,
-        highlightColor: Colors.transparent,
+    return SafeArea(
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+        ),
+        child: Container(
+          height: 48,
+          color: AppColors.bottomNavBackground,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(0, AssetPaths.timerIcon),
+              _buildNavItem(1, AssetPaths.diaryIcon),
+              _buildNavItem(2, AssetPaths.chartIcon),
+              _buildNavItem(3, AssetPaths.peopleIcon),
+            ],
+          ),
+        ),
       ),
-      child: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: currentIndex,
-        selectedItemColor: AppColors.selectedBottomNav,
-        unselectedItemColor: Colors.grey,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-        elevation: 0,
-        backgroundColor: AppColors.bottomNavBackground,
-        onTap: onTap,
-      items: [
-        BottomNavigationBarItem(
-          icon: SvgPicture.asset(
-            AssetPaths.timerIcon,
-            width: AppConstants.bottomNavIconSize,
-            height: AppConstants.bottomNavIconSize,
-            colorFilter: currentIndex == 0
-                ? ColorFilter.mode(
-                    AppColors.selectedBottomNav,
-                    BlendMode.srcIn,
-                  )
-                : ColorFilter.mode(Colors.grey, BlendMode.srcIn),
-          ),
-          label: '',
+    );
+  }
+
+  Widget _buildNavItem(int index, String iconPath) {
+    return InkWell(
+      onTap: () => onTap(index),
+      child: SvgPicture.asset(
+        iconPath,
+        width: AppConstants.bottomNavIconSize,
+        height: AppConstants.bottomNavIconSize,
+        colorFilter: ColorFilter.mode(
+          currentIndex == index ? AppColors.selectedBottomNav : Colors.grey,
+          BlendMode.srcIn,
         ),
-        BottomNavigationBarItem(
-          icon: SvgPicture.asset(
-            AssetPaths.diaryIcon,
-            width: AppConstants.bottomNavIconSize,
-            height: AppConstants.bottomNavIconSize,
-            colorFilter: currentIndex == 1
-                ? ColorFilter.mode(
-                    AppColors.selectedBottomNav,
-                    BlendMode.srcIn,
-                  )
-                : ColorFilter.mode(Colors.grey, BlendMode.srcIn),
-          ),
-          label: '',
-        ),
-        BottomNavigationBarItem(
-          icon: SvgPicture.asset(
-            AssetPaths.chartIcon,
-            width: AppConstants.bottomNavIconSize,
-            height: AppConstants.bottomNavIconSize,
-            colorFilter: currentIndex == 2
-                ? ColorFilter.mode(
-                    AppColors.selectedBottomNav,
-                    BlendMode.srcIn,
-                  )
-                : ColorFilter.mode(Colors.grey, BlendMode.srcIn),
-          ),
-          label: '',
-        ),
-        BottomNavigationBarItem(
-          icon: SvgPicture.asset(
-            AssetPaths.peopleIcon,
-            width: AppConstants.bottomNavIconSize,
-            height: AppConstants.bottomNavIconSize,
-            colorFilter: currentIndex == 3
-                ? ColorFilter.mode(
-                    AppColors.selectedBottomNav,
-                    BlendMode.srcIn,
-                  )
-                : ColorFilter.mode(Colors.grey, BlendMode.srcIn),
-          ),
-          label: '',
-        ),
-      ],
       ),
     );
   }

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:timedog_test/screen/settings/s_animation_settings.dart';
+import 'package:timedog_test/screen/settings/s_music_settings.dart';
 import 'package:timedog_test/screen/settings/s_pomodoro_setting.dart';
-import '../../screen/main/tab/timer/s_timer_settings.dart';
 import '../../screen/main/tab/timer/timer_notifier.dart';
 import '../../screen/main/tab/timer/vo/vo_timer.dart';
 import '../constant/app_constants.dart';
@@ -72,23 +72,6 @@ class _DrawerMenuWidgetState extends ConsumerState<DrawerMenuWidget>
                     width: 36,
                     height: 36,
                   ),
-                  title: const Text('타이머 설정'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const TimerSettingsScreen(),
-                      ),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: SvgPicture.asset(
-                    'assets/images/icons/setting.svg',
-                    width: 36,
-                    height: 36,
-                  ),
                   title: const Text('뽀모도로 설정'),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
@@ -113,6 +96,23 @@ class _DrawerMenuWidgetState extends ConsumerState<DrawerMenuWidget>
                       context,
                       MaterialPageRoute(
                         builder: (context) => const AnimationSettingsScreen(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: SvgPicture.asset(
+                    'assets/images/icons/setting.svg',
+                    width: 36,
+                    height: 36,
+                  ),
+                  title: const Text('음악 설정'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MusicSettingsScreen(),
                       ),
                     );
                   },

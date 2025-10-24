@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:timedog_test/screen/settings/s_pomodoro_setting.dart';
 import 'timer_notifier.dart';
 import 'vo/vo_timer.dart';
-import 's_timer_settings.dart';
 
 class TimerDisplayWidget extends ConsumerWidget {
   const TimerDisplayWidget({super.key});
@@ -43,7 +43,7 @@ class TimerDisplayWidget extends ConsumerWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const TimerSettingsScreen(),
+                      builder: (context) => const PomodoroSettingScreen(),
                     ),
                   );
                 },

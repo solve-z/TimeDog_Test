@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'w_tooltip_bubble.dart';
 
 class HeatmapCalendar extends StatefulWidget {
   final int year;
@@ -17,21 +18,60 @@ class HeatmapCalendar extends StatefulWidget {
 }
 
 class _HeatmapCalendarState extends State<HeatmapCalendar> {
+  DateTime? _selectedDate;
+  Offset? _tooltipPosition;
+  final GlobalKey _tooltipKey = GlobalKey();
+  final GlobalKey _stackKey = GlobalKey();
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        const gridWidth = 7 * 28.0;
+        const gridWidth = 7 * 30.0;
         const monthLabelWidth = 32.0;
         final totalContentWidth = monthLabelWidth + gridWidth;
         final leftPadding = (constraints.maxWidth - totalContentWidth) / 2;
 
-        return Row(
-          children: [
-            SizedBox(width: leftPadding.clamp(16.0, double.infinity)),
-            _buildMonthLabelsWithGrid(),
-            SizedBox(width: leftPadding.clamp(16.0, double.infinity)),
-          ],
+        return GestureDetector(
+          onTap: () {
+            // 외부 탭 시 말풍선 닫기
+            if (_selectedDate != null) {
+              setState(() {
+                _selectedDate = null;
+                _tooltipPosition = null;
+              });
+            }
+          },
+          child: Stack(
+            key: _stackKey,
+            children: [
+              // 캘린더 본체
+              Row(
+                children: [
+                  SizedBox(width: leftPadding.clamp(16.0, double.infinity)),
+                  _buildMonthLabelsWithGrid(),
+                  SizedBox(width: leftPadding.clamp(16.0, double.infinity)),
+                ],
+              ),
+              // 말풍선 오버레이
+              if (_selectedDate != null && _tooltipPosition != null)
+                Positioned(
+                  left: _tooltipPosition!.dx,
+                  top: _tooltipPosition!.dy - 60, // 말풍선 높이 + 여백
+                  child: FractionalTranslation(
+                    translation: const Offset(
+                      -0.5,
+                      0,
+                    ), // 자신의 너비 절반만큼 왼쪽으로 (중앙 정렬)
+                    child: TooltipBubble(
+                      key: _tooltipKey,
+                      date: _selectedDate!,
+                      minutes: widget.data[_selectedDate] ?? 0,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         );
       },
     );
@@ -82,14 +122,14 @@ class _HeatmapCalendarState extends State<HeatmapCalendar> {
 
   Widget _buildWeekRow(DateTime weekStart, String? monthLabel) {
     return SizedBox(
-      height: 26, // 그리드 위아래 간격 조절
+      height: 30, // 그리드 위아래 간격 조절
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 월 라벨 영역
           SizedBox(
             width: 28,
-            height: 24,
+            height: 26,
             child:
                 monthLabel != null
                     ? Container(
@@ -115,11 +155,39 @@ class _HeatmapCalendarState extends State<HeatmapCalendar> {
 
             if (isInYear) {
               final minutes = widget.data[date] ?? 0;
+              final cellKey = GlobalKey();
+
               return GestureDetector(
-                onTap: () => widget.onDayTap?.call(date),
+                key: cellKey,
+                onTap: () {
+                  final cellBox =
+                      cellKey.currentContext?.findRenderObject() as RenderBox?;
+                  final stackBox =
+                      _stackKey.currentContext?.findRenderObject()
+                          as RenderBox?;
+
+                  if (cellBox != null && stackBox != null) {
+                    // 스크롤 시에도 정확한 위치를 위해 매번 재계산
+                    final cellGlobal = cellBox.localToGlobal(Offset.zero);
+                    final stackGlobal = stackBox.localToGlobal(Offset.zero);
+
+                    // Stack 기준 상대 좌표
+                    final relativeX = cellGlobal.dx - stackGlobal.dx;
+                    final relativeY = cellGlobal.dy - stackGlobal.dy;
+
+                    // 셀 상단 중앙 (셀 너비 26의 중앙 = +13)
+                    final cellTopCenter = Offset(relativeX + 13, relativeY);
+
+                    setState(() {
+                      _selectedDate = date;
+                      _tooltipPosition = cellTopCenter;
+                    });
+                    widget.onDayTap?.call(date);
+                  }
+                },
                 child: Container(
-                  width: 24,
-                  height: 24,
+                  width: 26,
+                  height: 26,
                   margin: const EdgeInsets.only(right: 4),
                   decoration: BoxDecoration(
                     color: _getColor(minutes),
@@ -129,8 +197,8 @@ class _HeatmapCalendarState extends State<HeatmapCalendar> {
               );
             } else {
               return Container(
-                width: 24,
-                height: 24,
+                width: 26,
+                height: 26,
                 margin: const EdgeInsets.only(right: 4),
               );
             }

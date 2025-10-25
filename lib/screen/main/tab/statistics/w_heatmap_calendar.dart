@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class HeatmapCalendar extends StatefulWidget {
   final int year;
-  final Map<DateTime, int> data; // 날짜별 집중시간(분)
+  final Map<DateTime, int> data; //날짜별 집중시간(분)
   final Function(DateTime)? onDayTap;
 
   const HeatmapCalendar({
@@ -22,20 +22,16 @@ class _HeatmapCalendarState extends State<HeatmapCalendar> {
     return LayoutBuilder(
       builder: (context, constraints) {
         const gridWidth = 7 * 28.0;
-        const monthLabelWidth = 42.0;
-        final totalContentWidth = monthLabelWidth + 12 + gridWidth;
-        final leftPadding = (constraints.maxWidth - totalContentWidth) / 2 - 8;
-        final rightPadding = (constraints.maxWidth - totalContentWidth) / 2;
+        const monthLabelWidth = 32.0;
+        final totalContentWidth = monthLabelWidth + gridWidth;
+        final leftPadding = (constraints.maxWidth - totalContentWidth) / 2;
 
-        return SingleChildScrollView(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(width: leftPadding.clamp(16.0, double.infinity)),
-              _buildMonthLabelsWithGrid(),
-              SizedBox(width: rightPadding.clamp(16.0, double.infinity)),
-            ],
-          ),
+        return Row(
+          children: [
+            SizedBox(width: leftPadding.clamp(16.0, double.infinity)),
+            _buildMonthLabelsWithGrid(),
+            SizedBox(width: leftPadding.clamp(16.0, double.infinity)),
+          ],
         );
       },
     );
@@ -80,33 +76,30 @@ class _HeatmapCalendarState extends State<HeatmapCalendar> {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildWeekdayLabels(),
-        const SizedBox(height: 8),
-        Column(children: rows),
-      ],
+      children: [const SizedBox(height: 8), Column(children: rows)],
     );
   }
 
   Widget _buildWeekRow(DateTime weekStart, String? monthLabel) {
     return SizedBox(
-      height: 28,
+      height: 26, // 그리드 위아래 간격 조절
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 월 라벨 영역
           SizedBox(
-            width: 42,
+            width: 28,
+            height: 24,
             child:
                 monthLabel != null
-                    ? Align(
-                      alignment: Alignment.centerRight,
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 12),
+                    ? Container(
+                      margin: const EdgeInsets.only(right: 4),
+                      child: Align(
+                        alignment: Alignment.center,
                         child: Text(
                           monthLabel,
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 10,
                             color: Colors.grey[600],
                             fontWeight: FontWeight.w500,
                           ),
@@ -144,34 +137,6 @@ class _HeatmapCalendarState extends State<HeatmapCalendar> {
           }),
         ],
       ),
-    );
-  }
-
-  Widget _buildWeekdayLabels() {
-    const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-    return Row(
-      children: [
-        const SizedBox(width: 42), // 월 라벨 영역
-        ...List.generate(weekdays.length, (index) {
-          final day = weekdays[index];
-          Color dayColor;
-
-          if (index == 0) {
-            dayColor = Colors.red; // 일요일
-          } else if (index == 6) {
-            dayColor = Colors.blue; // 토요일
-          } else {
-            dayColor = Colors.grey[600]!;
-          }
-
-          return Container(
-            width: 24,
-            alignment: Alignment.center,
-            margin: const EdgeInsets.only(right: 4),
-            child: Text(day, style: TextStyle(fontSize: 11, color: dayColor)),
-          );
-        }),
-      ],
     );
   }
 

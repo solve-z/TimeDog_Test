@@ -1,33 +1,62 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timedog_test/screen/main/tab/statistics/w_heatmap_calendar.dart';
+import 'package:timedog_test/services/statistics_data_service.dart';
 
-class StatisticsScreen extends StatefulWidget {
+import '../../../../common/utils/app_logger.dart';
+
+class StatisticsScreen extends ConsumerStatefulWidget {
   const StatisticsScreen({super.key});
 
   @override
-  State<StatisticsScreen> createState() => _StatisticsScreenState();
+  ConsumerState<StatisticsScreen> createState() => _StatisticsScreenState();
 }
 
-class _StatisticsScreenState extends State<StatisticsScreen> {
+class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
   late int _selectedYear;
   DateTime? _selectedDate;
-  int _currentYear = DateTime.now().year;
+  final int _currentYear = DateTime.now().year;
   final int _startYear = 2022;
-  late final List<int> _years = List.generate(
-    _currentYear - _startYear + 1,
-    (i) => _startYear + i,
-  );
+  late List<int> _years;
   late PageController? _yearPageController;
+
+  Map<DateTime, int> _yearData = {}; // 연도별 데이터 캐시
+  bool _isLoading = true; // 로딩 상태
 
   @override
   void initState() {
     super.initState();
+
+    _selectedYear = _currentYear;
+    _years = List.generate(
+      _currentYear - _startYear + 1,
+      (index) => _startYear + index,
+    );
+
+    final initialIndex = _years.indexOf(_selectedYear);
+
     _yearPageController = PageController(
       initialPage: _years.length - 1,
       viewportFraction: 0.33,
     );
+    _loadData();
+  }
 
-    _selectedYear = _currentYear;
+  Future<void> _loadData() async {
+    AppLogger.statistics.d('_loadData 시작: $_selectedYear');
+    setState(() => _isLoading = true);
+    try {
+      _yearData = await _loadYearData(_selectedYear); // ← _loadYearData 사용
+      AppLogger.statistics.d('데이터 로드 완료: ${_yearData.length}개 날짜');
+      _yearData.forEach((date, minutes) {
+        AppLogger.statistics.d(
+          '${date.toString().substring(0, 10)}: ${minutes}분',
+        );
+      });
+    } catch (e) {
+      _yearData = {};
+    }
+    setState(() => _isLoading = false);
   }
 
   @override
@@ -47,15 +76,20 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               _buildTotalSection(),
               _buildLegend(),
               const SizedBox(height: 8),
-              HeatmapCalendar(
-                year: _selectedYear,
-                data: _getDummyData(),
-                onDayTap: (date) {
-                  setState(() {
-                    _selectedDate = date;
-                  });
-                },
-              ),
+              _isLoading
+                  ? const SizedBox(
+                    height: 400, // 로딩 인디케이터 높이 지정
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                  : HeatmapCalendar(
+                    year: _selectedYear,
+                    data: _yearData,
+                    onDayTap: (date) {
+                      setState(() {
+                        _selectedDate = date;
+                      });
+                    },
+                  ),
             ],
           ),
         ),
@@ -85,6 +119,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             setState(() {
               _selectedYear = _years[index];
             });
+            _loadData();
           },
           itemCount: _years.length,
           itemBuilder: (context, index) {
@@ -109,7 +144,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildTotalSection() {
-    final totalMinutes = 250;
+    final totalMinutes = _yearData.values.fold(
+      0,
+      (sum, minutes) => sum + minutes,
+    );
     final hours = totalMinutes ~/ 60;
     final minutes = totalMinutes % 60;
 
@@ -187,22 +225,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
-  Map<DateTime, int> _getDummyData() {
-    final data = <DateTime, int>{};
-    final random = [0, 30, 45, 60, 90, 120, 150, 180];
-
-    for (int month = 1; month <= 12; month++) {
-      final daysInMonth = DateTime(_selectedYear, month + 1, 0).day;
-
-      for (int day = 1; day <= daysInMonth; day++) {
-        final date = DateTime(_selectedYear, month, day);
-        // 랜덤하게 데이터 생성 (약 70%의 날짜에만 데이터 있음)
-        if ((day + month) % 3 != 0) {
-          data[date] = random[(day * month) % random.length];
-        }
-      }
-    }
-
-    return data;
+  Future<Map<DateTime, int>> _loadYearData(int year) async {
+    final service = ref.read(statisticsDataServiceProvider);
+    return await service.getYearData(year);
   }
 }

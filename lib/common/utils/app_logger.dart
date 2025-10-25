@@ -15,6 +15,7 @@ import 'dart:io';
 /// - AppLogger.music: 음악 관련 로그
 /// - AppLogger.sound: 완료 사운드 관련 로그
 /// - AppLogger.video: 비디오 관련 로그
+/// - AppLogger.statistics: 통계 관련 로그
 class AppLogger {
   // 싱글톤 패턴
   static final AppLogger _instance = AppLogger._internal();
@@ -126,6 +127,24 @@ class AppLogger {
       info: '📹 [VIDEO]',
       warning: '⚠️  [VIDEO]',
       error: '❌ [VIDEO]',
+    ),
+  );
+
+  static final Logger statistics = Logger(
+    output: _output,
+    printer: PrefixPrinter(
+      PrettyPrinter(
+        methodCount: 0,
+        errorMethodCount: 5,
+        lineLength: 120,
+        colors: true,
+        printEmojis: true,
+        dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
+      ),
+      debug: '📊 [STATS]',
+      info: '📈 [STATS]',
+      warning: '⚠️  [STATS]',
+      error: '❌ [STATS]',
     ),
   );
 

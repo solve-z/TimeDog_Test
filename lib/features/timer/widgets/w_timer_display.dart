@@ -1,0 +1,225 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:timedog_test/features/timer/screens/s_pomodoro_setting.dart';
+import '../providers/timer_notifier.dart';
+import '../models/vo_timer.dart';
+
+class TimerDisplayWidget extends ConsumerWidget {
+  const TimerDisplayWidget({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final timerState = ref.watch(timerProvider);
+
+    return SizedBox(
+      width: double.infinity,
+      child: Column(
+        children: [
+          // 타이머 표시 (모드, 타이머)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // 왼쪽: 빈 공간 (밸런스용 - 클릭하면 디버그 정보)
+              GestureDetector(
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder:
+                        (context) => _TimerDebugDialog(timerState: timerState),
+                  );
+                },
+                child: Container(
+                  width: 52, // 28 + (12 * 2) padding
+                  height: 52,
+                  color: Colors.transparent, // 클릭 영역 활성화
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              // 중앙: 타이머 표시
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PomodoroSettingScreen(),
+                    ),
+                  );
+                },
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final screenWidth = MediaQuery.of(context).size.width;
+                    final fontSize = screenWidth > 600 ? 80.0 : 70.0;
+                    final charWidth = screenWidth > 600 ? 50.0 : 38.0;
+                    final spacing = screenWidth > 600 ? 8.0 : 5.0;
+
+                    final chars = timerState.formattedTime
+                        .replaceAll(' ', '')
+                        .split('');
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (int i = 0; i < chars.length; i++) ...[
+                          SizedBox(
+                            width: charWidth,
+                            child: Text(
+                              chars[i],
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: 'OmyuPretty',
+                                fontSize: fontSize,
+                                fontWeight: FontWeight.w300,
+                                color: const Color(0xFF6B7280),
+                                letterSpacing: 0,
+                              ),
+                            ),
+                          ),
+                          if (i < chars.length - 1) SizedBox(width: spacing),
+                        ],
+                      ],
+                    );
+                  },
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              // 오른쪽: 빈 공간 (밸런스용 - 클릭하면 디버그 정보)
+              GestureDetector(
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder:
+                        (context) => _TimerDebugDialog(timerState: timerState),
+                  );
+                },
+                child: Container(
+                  width: 52, // 28 + (12 * 2) padding
+                  height: 52,
+                  color: Colors.transparent, // 클릭 영역 활성화
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// 디버그 정보 모달
+class _TimerDebugDialog extends StatelessWidget {
+  final TimerState timerState;
+
+  const _TimerDebugDialog({required this.timerState});
+
+  String _formatTime(DateTime dateTime) {
+    final hour = dateTime.hour.toString().padLeft(2, '0');
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    final second = dateTime.second.toString().padLeft(2, '0');
+    return '$hour:$minute:$second';
+  }
+
+  String _formatDuration(Duration duration) {
+    final minutes = duration.inMinutes.toString().padLeft(2, '0');
+    final seconds = (duration.inSeconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
+  }
+
+  Duration? _calculateActualDuration() {
+    if (timerState.startTime == null) return null;
+
+    // running 상태면 현재까지의 실제 경과 시간
+    if (timerState.status == TimerStatus.running) {
+      return DateTime.now().difference(timerState.startTime!);
+    }
+
+    // paused/stopped 상태면 endTime이 있을 때만 계산
+    if (timerState.endTime != null) {
+      return timerState.endTime!.difference(timerState.startTime!);
+    }
+
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final actualDuration = _calculateActualDuration();
+
+    return AlertDialog(
+      title: const Text(
+        'Timer Debug Info',
+        style: TextStyle(fontFamily: 'OmyuPretty', fontSize: 16),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (timerState.startTime != null) ...[
+            Text(
+              '시작: ${_formatTime(timerState.startTime!)}',
+              style: const TextStyle(
+                fontFamily: 'OmyuPretty',
+                fontSize: 14,
+                color: Color(0xFF374151),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          if (timerState.targetEndTime != null &&
+              timerState.status != TimerStatus.running) ...[
+            Text(
+              '목표: ${_formatTime(timerState.targetEndTime!)}',
+              style: const TextStyle(
+                fontFamily: 'OmyuPretty',
+                fontSize: 14,
+                color: Color(0xFF059669),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          if (timerState.endTime != null &&
+              timerState.status != TimerStatus.running) ...[
+            Text(
+              '실제: ${_formatTime(timerState.endTime!)}',
+              style: const TextStyle(
+                fontFamily: 'OmyuPretty',
+                fontSize: 14,
+                color: Color(0xFF6B7280),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          if (actualDuration != null) ...[
+            Text(
+              '${timerState.status == TimerStatus.running ? "경과" : "소요"}: ${_formatDuration(actualDuration)}',
+              style: const TextStyle(
+                fontFamily: 'OmyuPretty',
+                fontSize: 14,
+                color: Color(0xFF059669),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+          if (timerState.startTime == null)
+            const Text(
+              '타이머 정보 없음',
+              style: TextStyle(
+                fontFamily: 'OmyuPretty',
+                fontSize: 14,
+                color: Color(0xFF9CA3AF),
+              ),
+            ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('닫기', style: TextStyle(fontFamily: 'OmyuPretty')),
+        ),
+      ],
+    );
+  }
+}

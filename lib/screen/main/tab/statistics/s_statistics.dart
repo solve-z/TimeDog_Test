@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timedog_test/screen/main/tab/statistics/w_heatmap_calendar.dart';
+import 'package:timedog_test/screen/main/tab/statistics/w_tooltip_bubble.dart';
 import 'package:timedog_test/services/statistics_data_service.dart';
 
 import '../../../../common/utils/app_logger.dart';
@@ -22,6 +23,9 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
 
   Map<DateTime, int> _yearData = {}; // 연도별 데이터 캐시
   bool _isLoading = true; // 로딩 상태
+
+  Offset? _tooltipPosition;
+  int? _tooltipMinutes;
 
   @override
   void initState() {
@@ -69,28 +73,63 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              _buildYearSelector(),
-              _buildTotalSection(),
-              _buildLegend(),
-              const SizedBox(height: 8),
-              _isLoading
-                  ? const SizedBox(
-                    height: 400, // 로딩 인디케이터 높이 지정
-                    child: Center(child: CircularProgressIndicator()),
-                  )
-                  : HeatmapCalendar(
-                    year: _selectedYear,
-                    data: _yearData,
-                    onDayTap: (date) {
-                      setState(() {
-                        _selectedDate = date;
-                      });
-                    },
-                  ),
-            ],
+        child: GestureDetector(
+          onTap: () {
+            // 외부 탭 시 툴팁 닫기
+            if (_selectedDate != null) {
+              setState(() {
+                _selectedDate = null;
+                _tooltipPosition = null;
+                _tooltipMinutes = null;
+              });
+            }
+          },
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                _buildYearSelector(),
+                _buildTotalSection(),
+                _buildLegend(),
+                const SizedBox(height: 8),
+                _isLoading
+                    ? const SizedBox(
+                      height: 400, // 로딩 인디케이터 높이 지정
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                    : Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        HeatmapCalendar(
+                          year: _selectedYear,
+                          data: _yearData,
+                          onDayTap: (date, minutes, position) {
+                            setState(() {
+                              _selectedDate = date;
+                              _tooltipPosition = position;
+                              _tooltipMinutes = minutes;
+                            });
+                          },
+                        ),
+                        // 툴팁 레이어
+                        if (_selectedDate != null && _tooltipPosition != null)
+                          Positioned(
+                            left: _tooltipPosition!.dx,
+                            top: _tooltipPosition!.dy - 60,
+                            child: GestureDetector(
+                              onTap: () {}, // 툴팁 내부 탭은 무시
+                              child: FractionalTranslation(
+                                translation: const Offset(-0.5, 0),
+                                child: TooltipBubble(
+                                  date: _selectedDate!,
+                                  minutes: _tooltipMinutes ?? 0,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+              ],
+            ),
           ),
         ),
       ),

@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'w_tooltip_bubble.dart';
 
 class HeatmapCalendar extends StatefulWidget {
   final int year;
   final Map<DateTime, int> data; //날짜별 집중시간(분)
-  final Function(DateTime)? onDayTap;
+  final Function(DateTime date, int minutes, Offset position)? onDayTap;
 
   const HeatmapCalendar({
     super.key,
@@ -18,10 +17,7 @@ class HeatmapCalendar extends StatefulWidget {
 }
 
 class _HeatmapCalendarState extends State<HeatmapCalendar> {
-  DateTime? _selectedDate;
-  Offset? _tooltipPosition;
-  final GlobalKey _tooltipKey = GlobalKey();
-  final GlobalKey _stackKey = GlobalKey();
+  final GlobalKey _containerKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -32,61 +28,43 @@ class _HeatmapCalendarState extends State<HeatmapCalendar> {
         final totalContentWidth = monthLabelWidth + gridWidth;
         final leftPadding = (constraints.maxWidth - totalContentWidth) / 2;
 
-        return GestureDetector(
-          onTap: () {
-            // 외부 탭 시 말풍선 닫기
-            if (_selectedDate != null) {
-              setState(() {
-                _selectedDate = null;
-                _tooltipPosition = null;
-              });
-            }
-          },
-          child: Stack(
-            key: _stackKey,
-            children: [
-              // 캘린더 본체
-              Row(
-                children: [
-                  SizedBox(width: leftPadding.clamp(16.0, double.infinity)),
-                  _buildMonthLabelsWithGrid(),
-                  SizedBox(width: leftPadding.clamp(16.0, double.infinity)),
-                ],
-              ),
-              // 말풍선 오버레이
-              if (_selectedDate != null && _tooltipPosition != null)
-                Positioned(
-                  left: _tooltipPosition!.dx,
-                  top: _tooltipPosition!.dy - 60, // 말풍선 높이 + 여백
-                  child: FractionalTranslation(
-                    translation: const Offset(
-                      -0.5,
-                      0,
-                    ), // 자신의 너비 절반만큼 왼쪽으로 (중앙 정렬)
-                    child: TooltipBubble(
-                      key: _tooltipKey,
-                      date: _selectedDate!,
-                      minutes: widget.data[_selectedDate] ?? 0,
-                    ),
-                  ),
-                ),
-            ],
-          ),
+        return Row(
+          key: _containerKey,
+          children: [
+            SizedBox(width: leftPadding.clamp(16.0, double.infinity)),
+            _buildMonthLabelsWithGrid(),
+            SizedBox(width: leftPadding.clamp(16.0, double.infinity)),
+          ],
         );
       },
     );
   }
 
   Widget _buildMonthLabelsWithGrid() {
-    // 1년 전체를 주 단위로 계산 (12월 31일부터 역순)
+    // 현재 날짜가 포함된 주까지만 표시 (역순)
     final rows = <Widget>[];
 
-    // 12월 31일부터 시작
-    DateTime currentDate = DateTime(widget.year, 12, 31);
+    // 현재 날짜 (또는 해당 연도의 마지막 날)
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
 
-    // 12월 31일이 속한 주의 일요일 찾기
-    final lastDayWeekday = currentDate.weekday % 7;
-    DateTime weekStart = currentDate.subtract(Duration(days: lastDayWeekday));
+    // 현재 연도가 선택된 연도보다 크면 12월 31일까지, 같으면 오늘까지
+    DateTime endDate;
+    if (today.year > widget.year) {
+      endDate = DateTime(widget.year, 12, 31);
+    } else if (today.year == widget.year) {
+      endDate = today;
+    } else {
+      // 미래 연도면 아무것도 표시 안함
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [const SizedBox(height: 8)],
+      );
+    }
+
+    // endDate가 속한 주의 일요일 찾기
+    final endDayWeekday = endDate.weekday % 7;
+    DateTime weekStart = endDate.subtract(Duration(days: endDayWeekday));
 
     // 1월 1일
     final firstDayOfYear = DateTime(widget.year, 1, 1);
@@ -116,7 +94,11 @@ class _HeatmapCalendarState extends State<HeatmapCalendar> {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [const SizedBox(height: 8), Column(children: rows)],
+      children: [
+        _buildWeekdayLabels(),
+        const SizedBox(height: 8),
+        Column(children: rows),
+      ],
     );
   }
 
@@ -162,27 +144,25 @@ class _HeatmapCalendarState extends State<HeatmapCalendar> {
                 onTap: () {
                   final cellBox =
                       cellKey.currentContext?.findRenderObject() as RenderBox?;
-                  final stackBox =
-                      _stackKey.currentContext?.findRenderObject()
+                  final containerBox =
+                      _containerKey.currentContext?.findRenderObject()
                           as RenderBox?;
 
-                  if (cellBox != null && stackBox != null) {
-                    // 스크롤 시에도 정확한 위치를 위해 매번 재계산
+                  if (cellBox != null && containerBox != null) {
+                    // 셀과 컨테이너의 전역 좌표
                     final cellGlobal = cellBox.localToGlobal(Offset.zero);
-                    final stackGlobal = stackBox.localToGlobal(Offset.zero);
+                    final containerGlobal = containerBox.localToGlobal(
+                      Offset.zero,
+                    );
 
-                    // Stack 기준 상대 좌표
-                    final relativeX = cellGlobal.dx - stackGlobal.dx;
-                    final relativeY = cellGlobal.dy - stackGlobal.dy;
+                    // 컨테이너 기준 상대 좌표 (Stack에서 사용)
+                    final relativeX = cellGlobal.dx - containerGlobal.dx;
+                    final relativeY = cellGlobal.dy - containerGlobal.dy;
 
                     // 셀 상단 중앙 (셀 너비 26의 중앙 = +13)
                     final cellTopCenter = Offset(relativeX + 13, relativeY);
 
-                    setState(() {
-                      _selectedDate = date;
-                      _tooltipPosition = cellTopCenter;
-                    });
-                    widget.onDayTap?.call(date);
+                    widget.onDayTap?.call(date, minutes, cellTopCenter);
                   }
                 },
                 child: Container(
@@ -205,6 +185,42 @@ class _HeatmapCalendarState extends State<HeatmapCalendar> {
           }),
         ],
       ),
+    );
+  }
+
+  Widget _buildWeekdayLabels() {
+    const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+    return Row(
+      children: [
+        const SizedBox(width: 28), // 월 라벨 영역과 동일
+        ...List.generate(weekdays.length, (index) {
+          final day = weekdays[index];
+          Color dayColor;
+
+          if (index == 0) {
+            dayColor = Colors.red; // 일요일
+          } else if (index == 6) {
+            dayColor = Colors.blue; // 토요일
+          } else {
+            dayColor = Colors.grey[600]!;
+          }
+
+          return Container(
+            width: 26, // 셀과 동일한 너비
+            height: 20,
+            alignment: Alignment.center,
+            margin: const EdgeInsets.only(right: 4), // 셀과 동일한 margin
+            child: Text(
+              day,
+              style: TextStyle(
+                fontSize: 11,
+                color: dayColor,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          );
+        }),
+      ],
     );
   }
 

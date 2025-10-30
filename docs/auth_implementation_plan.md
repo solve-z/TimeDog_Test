@@ -162,7 +162,7 @@ feat: AuthService 닉네임 및 계정 관리 기능 추가
 - Supabase delete_user_account() SQL Function 작성
 ```
 
-### 3-3. AuthProvider 구현
+### 3-3. AuthProvider 구현 ✅
 **작업 내용:**
 - `lib/features/auth/providers/auth_provider.dart` 생성
 - StateNotifier 또는 ChangeNotifier 기반 상태 관리
@@ -170,13 +170,25 @@ feat: AuthService 닉네임 및 계정 관리 기능 추가
 - 로그인/로그아웃 이벤트 처리
 - 닉네임 설정 여부 확인 로직
 
+**완료 상태:** ✅ 완료 (2025-01-30)
+- supabaseClientProvider 생성
+- authServiceProvider 생성
+- currentUserProvider (StreamProvider) 구현
+- isAuthenticatedProvider 구현
+- hasNicknameProvider 구현
+- AuthNotifier (StateNotifier) 구현
+- authNotifierProvider 생성
+- supabaseInitProvider (초기화) 구현
+
 **커밋 메시지:**
 ```
 feat: AuthProvider 상태 관리 구현
 
-- 인증 상태 스트림 관리
-- 로그인/로그아웃 이벤트 처리 로직
-- 닉네임 설정 여부 확인 로직 추가
+- Riverpod Provider 기반 상태 관리 구현
+- currentUserProvider로 인증 상태 스트림 관리
+- isAuthenticatedProvider, hasNicknameProvider 추가
+- AuthNotifier로 로그인/로그아웃/닉네임 관리 액션 처리
+- supabaseInitProvider로 Supabase 초기화 관리
 ```
 
 ---

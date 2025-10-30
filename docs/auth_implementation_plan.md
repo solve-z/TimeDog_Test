@@ -195,11 +195,19 @@ feat: AuthProvider 상태 관리 구현
 
 ## Phase 4: 로그인 화면 구현
 
-### 4-1. Google 로그인 버튼 위젯
+### 4-1. Google 로그인 버튼 위젯 ✅
 **작업 내용:**
 - `lib/features/auth/widgets/w_google_sign_in_button.dart` 생성
 - Google 로고 + "Google로 로그인" 버튼 UI
 - 로딩 상태 처리
+
+**완료 상태:** ✅ 완료 (2025-01-30)
+- w_google_sign_in_button.dart 생성 완료
+- 로딩 상태 UI 추가
+- Google 로그인 에러 처리 추가
+- 테스트용 LoginTestScreen 추가 (s_login_test.dart)
+- app.dart에 Supabase 초기화 및 테스트 화면 연동
+- main.dart에 dotenv.load() 추가
 
 **커밋 메시지:**
 ```

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'screens/s_main.dart';
 import 'features/animation/providers/video_controller_provider.dart';
+import 'features/auth/providers/auth_provider.dart';
+import 'features/auth/screens/s_login_test.dart';
 import 'common/constants/app_constants.dart';
 
 class TimeDogApp extends ConsumerWidget {
@@ -12,6 +14,9 @@ class TimeDogApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // 앱 시작 시 비디오 컨트롤러 미리 로드 (백그라운드에서 초기화)
     ref.read(videoControllerProvider);
+
+    // Supabase 초기화
+    final supabaseInit = ref.watch(supabaseInitProvider);
 
     return MaterialApp(
       title: 'TimeDog',
@@ -31,7 +36,15 @@ class TimeDogApp extends ConsumerWidget {
           surfaceTintColor: Colors.transparent,
         ),
       ),
-      home: const MainScreen(),
+      home: supabaseInit.when(
+        data: (_) => const LoginTestScreen(), // 테스트용 로그인 화면
+        loading: () => const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        ),
+        error: (error, stack) => Scaffold(
+          body: Center(child: Text('초기화 실패: $error')),
+        ),
+      ),
     );
   }
 }

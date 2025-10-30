@@ -110,7 +110,7 @@ feat: 인증 및 프로필 기능 폴더 구조 및 UserVo 모델 생성
 
 ## Phase 3: 핵심 서비스 및 Provider 구현
 
-### 3-1. AuthService 구현 (기본 기능)
+### 3-1. AuthService 구현 (기본 기능) ✅
 **작업 내용:**
 - `lib/features/auth/services/auth_service.dart` 생성
 - Supabase 클라이언트 초기화
@@ -118,13 +118,25 @@ feat: 인증 및 프로필 기능 폴더 구조 및 UserVo 모델 생성
 - 로그아웃 메서드
 - 현재 사용자 정보 조회
 
+**완료 상태:** ✅ 완료 (2025-01-30)
+- AuthService 클래스 생성 (Riverpod 패턴 적용)
+- getCurrentUser() 메서드 구현
+- signInWithGoogle() 메서드 구현
+- signOut() 메서드 구현
+- authStateChanges 스트림 추가
+- AppLogger.auth 로거 추가
+- Database Trigger SQL 작성 (docs/supabase_trigger.sql)
+
 **커밋 메시지:**
 ```
-feat: AuthService 기본 기능 구현
+feat: AuthService 기본 기능 구현 및 Database Trigger 추가
 
-- Supabase 클라이언트 초기화
-- Google 로그인/로그아웃 메서드 추가
-- 사용자 정보 조회 메서드 추가
+- AuthService 클래스 생성 (Riverpod 패턴)
+- Google 로그인/로그아웃 메서드 구현
+- 현재 사용자 정보 조회 메서드 추가
+- 인증 상태 변경 스트림 추가
+- AppLogger.auth 로거 추가
+- Supabase Database Trigger SQL 작성 (profiles 자동 생성)
 ```
 
 ### 3-2. AuthService 확장 (닉네임 및 계정 관리)

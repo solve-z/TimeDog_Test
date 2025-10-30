@@ -4,7 +4,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'screens/s_main.dart';
 import 'features/animation/providers/video_controller_provider.dart';
 import 'features/auth/providers/auth_provider.dart';
-import 'features/auth/screens/s_login_test.dart';
 import 'common/constants/app_constants.dart';
 
 class TimeDogApp extends ConsumerWidget {
@@ -37,7 +36,7 @@ class TimeDogApp extends ConsumerWidget {
         ),
       ),
       home: supabaseInit.when(
-        data: (_) => const LoginTestScreen(), // 테스트용 로그인 화면
+        data: (_) => const MainScreen(),
         loading: () => const Scaffold(
           body: Center(child: CircularProgressIndicator()),
         ),

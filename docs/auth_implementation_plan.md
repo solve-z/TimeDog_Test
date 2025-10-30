@@ -217,12 +217,19 @@ feat: Google 로그인 버튼 위젯 추가
 - 로딩 상태 UI 추가
 ```
 
-### 4-2. LoginScreen 구현
+### 4-2. LoginScreen 구현 ✅
 **작업 내용:**
 - `lib/features/auth/screens/s_login.dart` 생성
 - 앱 로고 및 브랜딩
 - Google 로그인 버튼 배치
 - 에러 처리 (로그인 실패, 취소 등)
+
+**완료 상태:** ✅ 완료 (2025-01-30)
+- s_login.dart 생성 완료 (앱 로고, 브랜딩, Google 로그인 버튼)
+- ProfileScreen 수정 완료 (로그인 상태에 따른 UI 분기)
+  - 비로그인: 로그인 버튼 표시 → LoginScreen 이동
+  - 로그인: 사용자 정보 표시 + 로그아웃 버튼
+- app.dart 수정 (MainScreen으로 시작, 로그인 강제 X)
 
 **커밋 메시지:**
 ```
@@ -231,6 +238,33 @@ feat: 로그인 화면 구현
 - LoginScreen UI 구현
 - Google 로그인 버튼 연동
 - 로그인 에러 처리 추가
+```
+
+### 4-3. Google OAuth 설정 ✅
+**작업 내용:**
+- Google Cloud Console에서 OAuth Client ID 생성 (Android, Web)
+- Supabase Dashboard에서 Google Provider 활성화
+- .env에 GOOGLE_WEB_CLIENT_ID 추가
+- AuthService에서 Web Client ID 사용하도록 수정
+
+**완료 상태:** ✅ 완료 (2025-01-30)
+- Android OAuth Client ID 생성
+- Web OAuth Client ID 생성
+- Supabase Google Provider 설정 완료
+- .env에 GOOGLE_WEB_CLIENT_ID 추가
+- AuthService 수정 완료
+- Database Trigger 오타 수정 (emial → email)
+- profiles 테이블 nickname을 nullable로 변경
+- Google 로그인 테스트 성공 ✅
+
+**커밋 메시지:**
+```
+feat: Google OAuth 설정 완료
+
+- .env에 GOOGLE_WEB_CLIENT_ID 추가
+- AuthService에서 Web Client ID 사용
+- Database Trigger 오타 수정
+- profiles.nickname nullable로 변경
 ```
 
 ---

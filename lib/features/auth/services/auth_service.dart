@@ -1,3 +1,4 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timedog_test/common/utils/app_logger.dart';
@@ -26,15 +27,18 @@ class AuthService {
       }
 
       // profiles 테이블에서 사용자 정보 조회
-      final response = await _supabase
-          .from('profiles')
-          .select()
-          .eq('id', userId)
-          .maybeSingle();
+      final response =
+          await _supabase
+              .from('profiles')
+              .select()
+              .eq('id', userId)
+              .maybeSingle();
 
       if (response == null) {
         // Database Trigger가 정상 작동하면 발생하지 않아야 함
-        AppLogger.auth.e('Profile not found for user $userId - Database trigger may not be working');
+        AppLogger.auth.e(
+          'Profile not found for user $userId - Database trigger may not be working',
+        );
         throw Exception('Profile not found. Please contact support.');
       }
 
@@ -42,7 +46,11 @@ class AuthService {
       AppLogger.auth.d('Current user: $userVo');
       return userVo;
     } catch (e, stackTrace) {
-      AppLogger.auth.e('Failed to get current user', error: e, stackTrace: stackTrace);
+      AppLogger.auth.e(
+        'Failed to get current user',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return null;
     }
   }
@@ -53,8 +61,8 @@ class AuthService {
       AppLogger.auth.i('Starting Google sign-in');
 
       // Google Sign-In 설정
-      const webClientId = ''; // TODO: Google Cloud Console에서 발급받은 Web Client ID 추가
-      const iosClientId = ''; // TODO: Google Cloud Console에서 발급받은 iOS Client ID 추가
+      final webClientId = dotenv.env['GOOGLE_WEB_CLIENT_ID'] ?? '';
+      const iosClientId = ''; // TODO: iOS Client ID 추가 (iOS 지원 시)
 
       final GoogleSignIn googleSignIn = GoogleSignIn(
         clientId: iosClientId.isNotEmpty ? iosClientId : null,
@@ -85,12 +93,18 @@ class AuthService {
         accessToken: accessToken,
       );
 
-      AppLogger.auth.i('Google sign-in successful: ${authResponse.user?.email}');
+      AppLogger.auth.i(
+        'Google sign-in successful: ${authResponse.user?.email}',
+      );
 
       // 사용자 정보 조회 (Database Trigger로 profiles 자동 생성됨)
       return await getCurrentUser();
     } catch (e, stackTrace) {
-      AppLogger.auth.e('Google sign-in failed', error: e, stackTrace: stackTrace);
+      AppLogger.auth.e(
+        'Google sign-in failed',
+        error: e,
+        stackTrace: stackTrace,
+      );
       rethrow;
     }
   }
@@ -115,17 +129,22 @@ class AuthService {
     try {
       AppLogger.auth.d('Checking nickname availability: $nickname');
 
-      final response = await _supabase
-          .from('profiles')
-          .select('id')
-          .eq('nickname', nickname)
-          .maybeSingle();
+      final response =
+          await _supabase
+              .from('profiles')
+              .select('id')
+              .eq('nickname', nickname)
+              .maybeSingle();
 
       final isAvailable = response == null;
       AppLogger.auth.d('Nickname "$nickname" available: $isAvailable');
       return isAvailable;
     } catch (e, stackTrace) {
-      AppLogger.auth.e('Failed to check nickname availability', error: e, stackTrace: stackTrace);
+      AppLogger.auth.e(
+        'Failed to check nickname availability',
+        error: e,
+        stackTrace: stackTrace,
+      );
       rethrow;
     }
   }
@@ -172,7 +191,11 @@ class AuthService {
 
       return updatedUser;
     } catch (e, stackTrace) {
-      AppLogger.auth.e('Failed to update nickname', error: e, stackTrace: stackTrace);
+      AppLogger.auth.e(
+        'Failed to update nickname',
+        error: e,
+        stackTrace: stackTrace,
+      );
       rethrow;
     }
   }
@@ -192,7 +215,11 @@ class AuthService {
 
       AppLogger.auth.i('Account completely deleted');
     } catch (e, stackTrace) {
-      AppLogger.auth.e('Failed to delete account', error: e, stackTrace: stackTrace);
+      AppLogger.auth.e(
+        'Failed to delete account',
+        error: e,
+        stackTrace: stackTrace,
+      );
       rethrow;
     }
   }

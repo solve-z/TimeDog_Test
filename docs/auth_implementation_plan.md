@@ -139,20 +139,27 @@ feat: AuthService 기본 기능 구현 및 Database Trigger 추가
 - Supabase Database Trigger SQL 작성 (profiles 자동 생성)
 ```
 
-### 3-2. AuthService 확장 (닉네임 및 계정 관리)
+### 3-2. AuthService 확장 (닉네임 및 계정 관리) ✅
 **작업 내용:**
 - 닉네임 중복 검사 메서드
 - 닉네임 업데이트 메서드
 - 프로필 생성 메서드
 - 계정 삭제 메서드
 
+**완료 상태:** ✅ 완료 (2025-01-30)
+- isNicknameAvailable() 메서드 구현
+- updateNickname() 메서드 구현 (중복 검사 포함)
+- deleteAccount() 메서드 구현
+- Supabase delete_user_account() SQL Function 작성
+
 **커밋 메시지:**
 ```
 feat: AuthService 닉네임 및 계정 관리 기능 추가
 
 - 닉네임 중복 검사 메서드 추가
-- 닉네임 업데이트 메서드 추가
-- 프로필 생성 및 계정 삭제 메서드 추가
+- 닉네임 업데이트 메서드 추가 (중복 검사 포함)
+- 계정 완전 삭제 메서드 추가 (profiles + auth.users)
+- Supabase delete_user_account() SQL Function 작성
 ```
 
 ### 3-3. AuthProvider 구현

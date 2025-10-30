@@ -109,4 +109,91 @@ class AuthService {
 
   /// 인증 상태 변경 스트림
   Stream<AuthState> get authStateChanges => _supabase.auth.onAuthStateChange;
+
+  /// 닉네임 중복 검사
+  Future<bool> isNicknameAvailable(String nickname) async {
+    try {
+      AppLogger.auth.d('Checking nickname availability: $nickname');
+
+      final response = await _supabase
+          .from('profiles')
+          .select('id')
+          .eq('nickname', nickname)
+          .maybeSingle();
+
+      final isAvailable = response == null;
+      AppLogger.auth.d('Nickname "$nickname" available: $isAvailable');
+      return isAvailable;
+    } catch (e, stackTrace) {
+      AppLogger.auth.e('Failed to check nickname availability', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  /// 닉네임 업데이트
+  Future<UserVo> updateNickname(String nickname) async {
+    try {
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) {
+        throw Exception('User not logged in');
+      }
+
+      AppLogger.auth.i('Updating nickname to: $nickname for user $userId');
+
+      // 현재 닉네임 조회
+      final currentUser = await getCurrentUser();
+      if (currentUser?.nickname == nickname) {
+        AppLogger.auth.d('Nickname unchanged');
+        return currentUser!;
+      }
+
+      // 닉네임 중복 검사
+      final isAvailable = await isNicknameAvailable(nickname);
+      if (!isAvailable) {
+        throw Exception('Nickname already taken');
+      }
+
+      // 닉네임 업데이트
+      await _supabase
+          .from('profiles')
+          .update({
+            'nickname': nickname,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', userId);
+
+      AppLogger.auth.i('Nickname updated successfully');
+
+      // 업데이트된 사용자 정보 조회
+      final updatedUser = await getCurrentUser();
+      if (updatedUser == null) {
+        throw Exception('Failed to fetch updated user');
+      }
+
+      return updatedUser;
+    } catch (e, stackTrace) {
+      AppLogger.auth.e('Failed to update nickname', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  /// 계정 완전 삭제 (profiles + auth.users)
+  Future<void> deleteAccount() async {
+    try {
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) {
+        throw Exception('User not logged in');
+      }
+
+      AppLogger.auth.i('Deleting account for user $userId');
+
+      // Supabase Function 호출 (profiles + auth.users 모두 삭제)
+      await _supabase.rpc('delete_user_account');
+
+      AppLogger.auth.i('Account completely deleted');
+    } catch (e, stackTrace) {
+      AppLogger.auth.e('Failed to delete account', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
 }

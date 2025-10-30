@@ -49,3 +49,49 @@ CREATE TRIGGER on_auth_user_created
 -- FROM auth.users
 -- WHERE id NOT IN (SELECT id FROM public.profiles)
 -- ON CONFLICT (id) DO NOTHING;
+
+-- ============================================
+-- 계정 삭제 함수
+-- ============================================
+-- 목적: 사용자 계정 완전 삭제 (profiles + auth.users)
+-- 작성일: 2025-01-30
+
+-- 계정 삭제 함수 생성
+CREATE OR REPLACE FUNCTION public.delete_user_account()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  user_id uuid;
+BEGIN
+  -- 현재 로그인된 사용자 ID 가져오기
+  user_id := auth.uid();
+
+  IF user_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  -- 1. profiles 테이블에서 사용자 데이터 삭제
+  DELETE FROM public.profiles WHERE id = user_id;
+
+  -- 2. auth.users 테이블에서 사용자 삭제
+  DELETE FROM auth.users WHERE id = user_id;
+
+  -- 로그 기록 (선택사항)
+  RAISE NOTICE 'User account deleted: %', user_id;
+END;
+$$;
+
+-- ============================================
+-- 사용 방법 (Flutter에서 호출)
+-- ============================================
+-- await supabase.rpc('delete_user_account');
+
+-- ============================================
+-- 주의사항
+-- ============================================
+-- - 이 함수는 SECURITY DEFINER로 실행되므로 RLS를 우회할 수 있음
+-- - auth.users 삭제는 되돌릴 수 없음
+-- - 필요시 CASCADE 삭제를 위해 다른 테이블도 정리해야 할 수 있음

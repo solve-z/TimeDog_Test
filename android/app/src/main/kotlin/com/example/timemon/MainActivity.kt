@@ -1,4 +1,4 @@
-package com.example.timedog_test
+package com.example.timemon
 
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -7,7 +7,7 @@ import android.media.AudioManager
 import android.content.Context
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "com.example.timedog_test/audio"
+    private val CHANNEL = "com.example.timemon/audio"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

@@ -28,7 +28,7 @@ docs: Supabase 프로젝트 설정 및 DB 스키마 추가
 - Google OAuth Provider 설정 완료
 ```
 
-### 1-2. Flutter 의존성 추가
+### 1-2. Flutter 의존성 추가 ✅
 **작업 내용:**
 - `pubspec.yaml`에 필수 패키지 추가
   - `supabase_flutter`
@@ -36,28 +36,34 @@ docs: Supabase 프로젝트 설정 및 DB 스키마 추가
   - `flutter_dotenv`
   - `flutter_riverpod` (상태 관리)
 
-**커밋 메시지:**
-```
-chore: 인증 관련 의존성 추가
+**완료 상태:** ✅ 완료 (2025-01-30)
+- supabase_flutter: ^2.9.1 추가
+- google_sign_in: ^6.2.2 추가
+- flutter_dotenv: ^5.2.1 추가
+- flutter pub get 완료
 
-- supabase_flutter 추가
-- google_sign_in 추가
-- flutter_dotenv, flutter_riverpod 추가
+**커밋 메시지 (1-2, 1-3 통합):**
+```
+feat: Supabase 인증을 위한 Flutter 의존성 및 환경 변수 설정
+
+- supabase_flutter, google_sign_in, flutter_dotenv 의존성 추가
+- .env 파일 생성 및 Supabase 연결 정보 설정
+- .env.example 템플릿 파일 생성
+- .gitignore에 .env 추가하여 민감 정보 보호
 ```
 
-### 1-3. 환경 변수 설정
+### 1-3. 환경 변수 설정 ✅
 **작업 내용:**
 - `.env` 파일 생성 (Supabase URL, Anon Key)
 - `.gitignore`에 `.env` 추가
 - `.env.example` 파일 생성 (템플릿용)
 
-**커밋 메시지:**
-```
-chore: 환경 변수 설정 파일 추가
+**완료 상태:** ✅ 완료 (2025-01-30)
+- .env 파일 생성 및 Supabase URL, Anon Key 설정 완료
+- .env.example 템플릿 생성 완료
+- .gitignore에 .env 추가 완료
 
-- .env.example 템플릿 추가
-- .gitignore에 .env 추가
-```
+**커밋 메시지:** (1-2와 통합)
 
 ---
 

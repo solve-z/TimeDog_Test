@@ -69,34 +69,42 @@ feat: Supabase 인증을 위한 Flutter 의존성 및 환경 변수 설정
 
 ## Phase 2: 폴더 구조 및 기본 모델 생성
 
-### 2-1. 폴더 구조 생성
+### 2-1. 폴더 구조 생성 ✅
 **작업 내용:**
 - `lib/features/auth/` 폴더 구조 생성
   - models/, providers/, services/, widgets/, dialogs/, screens/
 - `lib/features/profile/` 폴더 구조 생성
   - widgets/, dialogs/, screens/
 
-**커밋 메시지:**
-```
-chore: 인증 및 프로필 기능 폴더 구조 생성
+**완료 상태:** ✅ 완료 (2025-01-30)
+- features/auth 폴더 구조 생성 완료
+- features/profile 폴더 구조 생성 완료
 
-- features/auth 폴더 구조 추가
-- features/profile 폴더 구조 추가
+**커밋 메시지 (2-1, 2-2 통합):**
+```
+feat: 인증 및 프로필 기능 폴더 구조 및 UserVo 모델 생성
+
+- features/auth 폴더 구조 추가 (models, providers, services, widgets, dialogs, screens)
+- features/profile 폴더 구조 추가 (widgets, dialogs, screens)
+- UserVo 모델 생성 (id, email, nickname, avatarUrl 등)
+- JSON serialization 메서드 구현 (fromJson, toJson)
+- hasNickname getter 및 copyWith 메서드 추가
 ```
 
-### 2-2. UserVo 모델 생성
+### 2-2. UserVo 모델 생성 ✅
 **작업 내용:**
 - `lib/features/auth/models/vo_user.dart` 생성
 - 필드: id, email, fullName, nickname, avatarUrl
 - JSON serialization (fromJson, toJson)
 
-**커밋 메시지:**
-```
-feat: 사용자 데이터 모델 추가
+**완료 상태:** ✅ 완료 (2025-01-30)
+- UserVo 클래스 생성 완료
+- fromJson, toJson 메서드 구현 완료
+- hasNickname getter 추가
+- copyWith 메서드 추가
+- toString, operator ==, hashCode 구현
 
-- UserVo 클래스 생성 (id, email, nickname, avatarUrl 등)
-- JSON serialization 메서드 구현
-```
+**커밋 메시지:** (2-1과 통합)
 
 ---
 
